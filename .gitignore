@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .env
+memory.json
 *.js
 *.d.ts
 *.js.map
