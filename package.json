@@ -1,0 +1,27 @@
+{
+  "name": "parallax-agent",
+  "version": "0.1.0",
+  "description": "x402 orchestration agent — chains multiple x402-paid endpoints into compound intelligence workflows",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^1.2.12",
+    "@coinbase/cdp-sdk": "^1.44.0",
+    "@daydreamsai/cli": "^0.3.22",
+    "@daydreamsai/core": "^0.3.22",
+    "@x402/evm": "^2.3.0",
+    "@x402/fetch": "^2.3.0",
+    "dotenv": "^16.4.7",
+    "viem": "^2.23.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}
