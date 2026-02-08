@@ -10,29 +10,92 @@ This is NOT an x402 endpoint — it is the aggregation/orchestration layer that 
 
 **Stack:** TypeScript (strict mode), Daydreams framework, x402 protocol, USDC on Base, CDP Server Wallet v2
 **Deployment:** Railway
-**Status:** Pre-development (Phase 1)
+**Status:** Phase 1 complete (CLI pipeline functional)
+
+## Build Progress
+
+### Phase 1 — COMPLETE
+All core modules built and wired up. The full pipeline works end-to-end in mock mode.
+
+| Step | Module | Status | Files |
+|------|--------|--------|-------|
+| 1 | Project scaffold + dependencies | Done | `package.json`, `tsconfig.json`, `.env.example`, `.gitignore` |
+| 2 | Types + endpoint registry | Done | `src/agent/types.ts`, `src/endpoints/registry.json`, `src/agent/contexts/registry.ts` |
+| 3 | x402 client | Done | `src/endpoints/client.ts`, `src/utils/logger.ts` |
+| 4 | Query decomposition | Done | `src/prompts/decompose.ts`, `src/agent/contexts/query.ts` |
+| 5 | Execution context | Done | `src/agent/contexts/execution.ts` |
+| 6 | Synthesis context | Done | `src/prompts/synthesize.ts`, `src/agent/contexts/synthesis.ts` |
+| 7 | Billing + memory | Done | `src/agent/contexts/billing.ts`, `src/agent/contexts/memory.ts` |
+| 8 | Agent assembly + CLI | Done | `src/agent/parallax.ts`, `src/index.ts` |
+
+### What Works
+- Full pipeline: query → decompose → execute → synthesize → markdown report
+- Mock mode (`MOCK_MODE=true`) with canned responses for all 19 capabilities
+- 6 x402 endpoints registered (Einstein AI, Gloria AI, Neynar, SLAMai, BlackSwan, Elsa x402)
+- Structured cost summary after each query
+- Interactive mode via Daydreams CLI extension
+
+### What Needs Testing
+- End-to-end with a real `ANTHROPIC_API_KEY` (mock mode verified, LLM calls not yet tested)
+- Live x402 endpoint calls (need funded USDC wallet + live endpoints)
+- Interactive mode conversation flow
+
+## Next Steps
+
+### Phase 1 Hardening (do these first)
+1. **Test with real LLM** — Add `ANTHROPIC_API_KEY` to `.env` and run `MOCK_MODE=true npx tsx src/index.ts "Should I invest in $AERO on Base?"` to verify decomposition + synthesis work
+2. **Verify endpoint URLs** — Check which endpoints in `registry.json` are actually live. Update URLs or add new ones from the x402 ecosystem (bazaar, etc.)
+3. **Prompt iteration** — Test decomposition and synthesis prompts with varied queries, tune for quality
+4. **Memory integration** — Wire memory context into the pipeline (save query results, update endpoint reliability after each call)
+5. **Error edge cases** — Test: all endpoints fail, no matching endpoints, LLM returns malformed JSON
+
+### Phase 2 — Chat UI
+- Next.js chat interface with Vercel AI SDK (`useChat` hooks)
+- Streaming report output
+- User wallet connection (wagmi + ConnectKit)
+- User pays USDC → agent pays endpoints → retains margin
+
+### Phase 3 — Growth
+- Parallel endpoint execution
+- Subscription billing
+- Endpoint auto-discovery
+- Reliability scoring + smart routing
+- Custom workflow builder
+- Webhook / Telegram / Farcaster delivery
+- Deploy to Railway
 
 ## Key Documents
 
-- `parallax-CLAUDE.md` — Detailed build guide with implementation steps, code patterns, prompts, and phase plan
+- `parallax-CLAUDE.md` — Original build guide with implementation steps, code patterns, and phase plan
 - `parallax-prd.md` — Full PRD with business context, workflows, architecture, monetization, and roadmap
-- `SCRATCHPAD.md` — Lessons learned, gotchas, and decisions made during the build
+- `SCRATCHPAD.md` — Lessons learned, gotchas, and decisions made during the build (zod v3/v4, AI SDK versioning, etc.)
 
 ## Architecture
 
 ```
-ParallaxAgent (Daydreams)
-├── QueryContext          — LLM decomposes user query into sub-tasks
-├── EndpointRegistryCtx   — Catalog of x402 endpoints: capabilities, pricing, reliability
-├── ExecutionContext       — Call endpoints via x402 client, manage payments, handle failures/retries
-├── SynthesisContext       — LLM combines raw results into structured markdown report
-├── MemoryContext          — Past queries, user prefs, endpoint reliability (v1: JSON file)
-└── BillingContext         — Track per-query costs, margins, user credits
+src/
+├── index.ts                      # Entry point — single query or interactive CLI
+├── agent/
+│   ├── parallax.ts               # createDreams agent + orchestration context
+│   ├── types.ts                  # Zod-validated types (endpoints, sub-tasks, results, reports)
+│   └── contexts/
+│       ├── registry.ts           # Endpoint registry — load, search by capability
+│       ├── query.ts              # Query decomposition — LLM breaks query into sub-tasks
+│       ├── execution.ts          # Execute sub-tasks via x402 client sequentially
+│       ├── synthesis.ts          # Synthesize endpoint results into markdown report
+│       ├── billing.ts            # Track per-query costs (x402 + LLM)
+│       └── memory.ts             # JSON file persistence (past queries, reliability)
+├── endpoints/
+│   ├── registry.json             # 6 x402 endpoints, 19 capabilities
+│   └── client.ts                 # x402 HTTP client (mock mode, CDP wallet, timeouts)
+├── prompts/
+│   ├── decompose.ts              # Decomposition prompt template
+│   └── synthesize.ts             # Synthesis prompt template
+└── utils/
+    └── logger.ts                 # Structured endpoint call logging
 ```
 
-**Core loop:** User Query → Decompose into sub-tasks → Match to x402 endpoints → Execute calls (sequential in Phase 1) → LLM synthesizes report → Deliver to user
-
-Each context lives in its own file under `src/agent/contexts/`. The x402 HTTP client (`src/endpoints/client.ts`) centralizes all endpoint calls — never use raw fetch for x402 endpoints.
+**Core loop:** User Query → Decompose into sub-tasks → Match to x402 endpoints → Execute calls (sequential) → LLM synthesizes report → Print report + cost summary
 
 ## Build & Run Commands
 
@@ -40,8 +103,14 @@ Each context lives in its own file under `src/agent/contexts/`. The x402 HTTP cl
 # Install dependencies
 npm install
 
-# Run CLI (primary entry point)
-npx tsx src/index.ts "your query here"
+# Run single query (mock mode — no USDC spent)
+MOCK_MODE=true npx tsx src/index.ts "Should I invest in $AERO on Base?"
+
+# Run interactive mode
+MOCK_MODE=true npx tsx src/index.ts
+
+# Run with live x402 endpoints (requires funded wallet)
+npx tsx src/index.ts "Should I invest in $AERO on Base?"
 
 # TypeScript compilation check
 npx tsc --noEmit
@@ -51,19 +120,22 @@ npx tsc --noEmit
 
 Required in `.env` (see `.env.example`):
 - `ANTHROPIC_API_KEY` — LLM calls for decomposition + synthesis
-- `CDP_API_KEY` — Coinbase Developer Platform agent wallet
-- `CDP_WALLET_SECRET` — CDP wallet secret
-- `BASE_RPC_URL` — Base mainnet RPC
-- `AGENT_WALLET_ADDRESS` — Pre-funded USDC wallet for x402 payments
+- `CDP_API_KEY_ID` — Coinbase Developer Platform API key ID
+- `CDP_API_KEY_SECRET` — Coinbase Developer Platform API key secret
+- `CDP_WALLET_SECRET` — CDP wallet secret for signing x402 payments
+- `BASE_RPC_URL` — Base mainnet RPC (optional, CDP handles signing remotely)
+- `MOCK_MODE` — Set to `true` to skip real x402 calls and use canned responses
+- `EVM_PRIVATE_KEY` — (dev only) Local private key signer instead of CDP wallet
 
 ## Coding Standards
 
 - TypeScript strict mode
 - Zod for all external data validation — endpoint responses are untrusted
-- All x402 calls go through the centralized client (`x402-fetch` package), never raw fetch
+- All x402 calls go through the centralized client (`src/endpoints/client.ts`), never raw fetch
 - Log every endpoint call with: endpoint_id, latency_ms, cost, success/fail
-- Keep synthesis prompts in separate files for easy iteration
+- Keep synthesis prompts in separate files (`src/prompts/`) for easy iteration
 - Each context is a single file with a single responsibility
+- Use `as any` casts for zod schemas passed to Daydreams `context()` and `action()` (zod v3/v4 compat)
 
 ## Git Workflow
 
@@ -74,14 +146,18 @@ Required in `.env` (see `.env.example`):
 
 ## x402 Payment Pattern
 
-x402 uses HTTP 402 Payment Required flow. The `x402-fetch` package handles payment headers automatically when configured with a CDP Server Wallet:
+x402 v2 uses `@x402/fetch` + `@x402/evm` packages (NOT the deprecated `x402-fetch`):
 
 ```typescript
-import { x402Fetch } from 'x402-fetch';
-const response = await x402Fetch(endpoint.url + '/api/data', {
-  wallet: agentWallet,
-  maxPayment: endpoint.costPerCall
-});
+import { x402Client, wrapFetchWithPayment } from "@x402/fetch";
+import { registerExactEvmScheme } from "@x402/evm/exact/client";
+import { toClientEvmSigner } from "@x402/evm";
+
+const client = new x402Client();
+registerExactEvmScheme(client, { signer: toClientEvmSigner(account) });
+const fetchWithPayment = wrapFetchWithPayment(fetch, client);
+
+const response = await fetchWithPayment(endpoint.url);
 ```
 
 ## Error Handling
@@ -91,13 +167,12 @@ const response = await x402Fetch(endpoint.url + '/api/data', {
 - Decomposition returns capabilities with no matching endpoint: note "data unavailable" in report
 - Never let a single endpoint failure kill the entire workflow — always produce a partial report
 
-## Phase 1 Scope (Current)
+## Known Issues / Tech Debt
 
-Phase 1 is CLI-only, sequential execution, no UI, no auth, no subscriptions. Goal: query in → markdown report out. See `parallax-CLAUDE.md` "Phase 1 Build" section for detailed step-by-step build order and file structure.
-
-## Endpoint Registry
-
-Seed endpoint data lives in `src/endpoints/registry.json`. Known x402 endpoints come from the goust ecosystem (github.com/langoustine69). Verify endpoint URLs are live before building against them; use mock endpoints locally if needed.
+- **zod v3/v4 mismatch**: Daydreams bundles zod v4 internally, our project uses zod v3. We cast with `as any`. If Daydreams updates to export zod or align versions, remove the casts.
+- **Memory not wired into pipeline**: Billing and memory contexts exist but aren't called from the main `runPipeline()` in `index.ts`. Need to add save-query-result and update-endpoint-reliability calls.
+- **LLM cost estimates are hardcoded**: `$0.003` for decomposition, `$0.008` for synthesis. Should use actual token counts from AI SDK response.
+- **Endpoint registry is static**: No runtime discovery. Phase 3 will add auto-discovery.
 
 ## Relevant Skills
 
