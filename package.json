@@ -9,12 +9,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^1.2.12",
+    "@ai-sdk/anthropic": "^2.0.59",
     "@coinbase/cdp-sdk": "^1.44.0",
     "@daydreamsai/cli": "^0.3.22",
     "@daydreamsai/core": "^0.3.22",
     "@x402/evm": "^2.3.0",
     "@x402/fetch": "^2.3.0",
+    "ai": "^5.0.30",
     "dotenv": "^16.4.7",
     "viem": "^2.23.0",
     "zod": "^3.25.76"
