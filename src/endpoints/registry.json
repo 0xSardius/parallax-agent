@@ -1,0 +1,56 @@
+[
+  {
+    "id": "einstein-ai",
+    "name": "Einstein AI",
+    "url": "https://einstein-ai.up.railway.app",
+    "capabilities": ["blockchain_intelligence", "whale_tracking", "token_analysis"],
+    "costPerCall": 0.01,
+    "reliability": 0.9,
+    "description": "Blockchain intelligence — whale tracking, token holder analysis, on-chain patterns"
+  },
+  {
+    "id": "gloria-ai",
+    "name": "Gloria AI",
+    "url": "https://gloria-ai.up.railway.app",
+    "capabilities": ["crypto_news", "market_sentiment", "regulatory_updates"],
+    "costPerCall": 0.01,
+    "reliability": 0.85,
+    "description": "Real-time crypto news aggregation and sentiment analysis"
+  },
+  {
+    "id": "neynar-farcaster",
+    "name": "Neynar Farcaster",
+    "url": "https://neynar-x402.up.railway.app",
+    "capabilities": ["social_data", "farcaster_trends", "community_sentiment"],
+    "costPerCall": 0.01,
+    "reliability": 0.9,
+    "description": "Farcaster social graph data — trending topics, community sentiment, influencer activity"
+  },
+  {
+    "id": "slamai",
+    "name": "SLAMai",
+    "url": "https://slamai.up.railway.app",
+    "capabilities": ["smart_money", "wallet_tracking", "dex_flow"],
+    "costPerCall": 0.01,
+    "reliability": 0.85,
+    "description": "Smart money intelligence — whale wallet tracking, DEX flow analysis"
+  },
+  {
+    "id": "blackswan",
+    "name": "BlackSwan",
+    "url": "https://blackswan-x402.up.railway.app",
+    "capabilities": ["risk_intelligence", "black_swan_events", "market_risk"],
+    "costPerCall": 0.01,
+    "reliability": 0.8,
+    "description": "Risk intelligence — tail risk events, market stress indicators, systemic risk"
+  },
+  {
+    "id": "elsa-x402",
+    "name": "Elsa x402",
+    "url": "https://elsa-x402.up.railway.app",
+    "capabilities": ["defi_portfolio", "yield_data", "apy_comparison", "tvl_tracking"],
+    "costPerCall": 0.01,
+    "reliability": 0.85,
+    "description": "DeFi portfolio and yield intelligence — APY comparison, TVL tracking, yield strategies"
+  }
+]
