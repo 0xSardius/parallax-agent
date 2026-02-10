@@ -1,56 +1,101 @@
 [
   {
-    "id": "einstein-ai",
-    "name": "Einstein AI",
-    "url": "https://einstein-ai.up.railway.app",
-    "capabilities": ["blockchain_intelligence", "whale_tracking", "token_analysis"],
+    "id": "silverback-top-coins",
+    "name": "Silverback DeFi — Top Coins",
+    "url": "https://x402.silverbackdefi.app/api/v1/top-coins",
+    "capabilities": ["token_analysis", "market_data"],
+    "costPerCall": 0.001,
+    "reliability": 0.9,
+    "description": "Top cryptocurrencies ranked by market cap with price data"
+  },
+  {
+    "id": "silverback-whale-moves",
+    "name": "Silverback DeFi — Whale Moves",
+    "url": "https://x402.silverbackdefi.app/api/v1/whale-moves",
+    "capabilities": ["whale_tracking", "smart_money"],
     "costPerCall": 0.01,
     "reliability": 0.9,
-    "description": "Blockchain intelligence — whale tracking, token holder analysis, on-chain patterns"
+    "description": "Monitor whale buys, sells, and transfers for any token"
   },
   {
-    "id": "gloria-ai",
-    "name": "Gloria AI",
-    "url": "https://gloria-ai.up.railway.app",
-    "capabilities": ["crypto_news", "market_sentiment", "regulatory_updates"],
-    "costPerCall": 0.01,
-    "reliability": 0.85,
-    "description": "Real-time crypto news aggregation and sentiment analysis"
-  },
-  {
-    "id": "neynar-farcaster",
-    "name": "Neynar Farcaster",
-    "url": "https://neynar-x402.up.railway.app",
-    "capabilities": ["social_data", "farcaster_trends", "community_sentiment"],
+    "id": "silverback-token-audit",
+    "name": "Silverback DeFi — Token Audit",
+    "url": "https://x402.silverbackdefi.app/api/v1/token-audit",
+    "capabilities": ["risk_intelligence", "token_security"],
     "costPerCall": 0.01,
     "reliability": 0.9,
-    "description": "Farcaster social graph data — trending topics, community sentiment, influencer activity"
+    "description": "Token security audit: honeypot detection, tax analysis, ownership risks"
   },
   {
-    "id": "slamai",
-    "name": "SLAMai",
-    "url": "https://slamai.up.railway.app",
-    "capabilities": ["smart_money", "wallet_tracking", "dex_flow"],
-    "costPerCall": 0.01,
+    "id": "silverback-technical",
+    "name": "Silverback DeFi — Technical Analysis",
+    "url": "https://x402.silverbackdefi.app/api/v1/technical-analysis",
+    "capabilities": ["technical_analysis", "market_risk"],
+    "costPerCall": 0.02,
     "reliability": 0.85,
-    "description": "Smart money intelligence — whale wallet tracking, DEX flow analysis"
+    "description": "RSI, MACD, Bollinger Bands technical analysis for tokens"
   },
   {
-    "id": "blackswan",
-    "name": "BlackSwan",
-    "url": "https://blackswan-x402.up.railway.app",
-    "capabilities": ["risk_intelligence", "black_swan_events", "market_risk"],
-    "costPerCall": 0.01,
-    "reliability": 0.8,
-    "description": "Risk intelligence — tail risk events, market stress indicators, systemic risk"
+    "id": "silverback-trending",
+    "name": "Silverback DeFi — Trending Tokens",
+    "url": "https://x402.silverbackdefi.app/api/v1/trending-tokens",
+    "capabilities": ["market_sentiment", "trending"],
+    "costPerCall": 0.001,
+    "reliability": 0.9,
+    "description": "Trending tokens and pools by volume and activity"
   },
   {
-    "id": "elsa-x402",
-    "name": "Elsa x402",
-    "url": "https://elsa-x402.up.railway.app",
-    "capabilities": ["defi_portfolio", "yield_data", "apy_comparison", "tvl_tracking"],
-    "costPerCall": 0.01,
+    "id": "silverback-top-pools",
+    "name": "Silverback DeFi — Top Pools",
+    "url": "https://x402.silverbackdefi.app/api/v1/top-pools",
+    "capabilities": ["yield_data", "defi_portfolio", "tvl_tracking"],
+    "costPerCall": 0.001,
+    "reliability": 0.9,
+    "description": "Top yielding pools on Base DEXes"
+  },
+  {
+    "id": "silverback-dex-metrics",
+    "name": "Silverback DeFi — DEX Metrics",
+    "url": "https://x402.silverbackdefi.app/api/v1/dex-metrics",
+    "capabilities": ["dex_flow", "blockchain_intelligence"],
+    "costPerCall": 0.002,
+    "reliability": 0.9,
+    "description": "Base DEX ecosystem: volume, TVL, gas stats, top pairs"
+  },
+  {
+    "id": "silverback-defi-yield",
+    "name": "Silverback DeFi — DeFi Yield",
+    "url": "https://x402.silverbackdefi.app/api/v1/defi-yield",
+    "capabilities": ["apy_comparison", "yield_data"],
+    "costPerCall": 0.02,
     "reliability": 0.85,
-    "description": "DeFi portfolio and yield intelligence — APY comparison, TVL tracking, yield strategies"
+    "description": "DeFi yield opportunities on Base"
+  },
+  {
+    "id": "gloria-news",
+    "name": "Gloria AI — News",
+    "url": "https://api.itsgloria.ai/news",
+    "capabilities": ["crypto_news", "regulatory_updates"],
+    "costPerCall": 0.03,
+    "reliability": 0.85,
+    "description": "Latest 10 crypto news headlines by category (ai, base, bitcoin, crypto, defi, ethereum, macro, solana)"
+  },
+  {
+    "id": "gloria-recaps",
+    "name": "Gloria AI — Recaps",
+    "url": "https://api.itsgloria.ai/recaps",
+    "capabilities": ["market_sentiment", "crypto_news"],
+    "costPerCall": 0.10,
+    "reliability": 0.85,
+    "description": "12-24 hour news recap and sentiment summary by category"
+  },
+  {
+    "id": "gloria-ticker",
+    "name": "Gloria AI — Ticker Summary",
+    "url": "https://api.itsgloria.ai/news-ticker-summary",
+    "capabilities": ["token_analysis", "crypto_news"],
+    "costPerCall": 0.031,
+    "reliability": 0.85,
+    "description": "24-hour token activity summary with key events and price context"
   }
 ]

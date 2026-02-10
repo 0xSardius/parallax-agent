@@ -10,7 +10,7 @@ This is NOT an x402 endpoint — it is the aggregation/orchestration layer that 
 
 **Stack:** TypeScript (strict mode), Daydreams framework, x402 protocol, USDC on Base, CDP Server Wallet v2
 **Deployment:** Railway
-**Status:** Phase 1 complete (CLI pipeline functional)
+**Status:** Phase 1 complete — ready for live x402 testing
 
 ## Build Progress
 
@@ -30,24 +30,29 @@ All core modules built and wired up. The full pipeline works end-to-end in mock 
 
 ### What Works
 - Full pipeline: query → decompose → execute → synthesize → markdown report
-- Mock mode (`MOCK_MODE=true`) with canned responses for all 19 capabilities
-- 6 x402 endpoints registered (Einstein AI, Gloria AI, Neynar, SLAMai, BlackSwan, Elsa x402)
+- Mock mode (`MOCK_MODE=true`) with canned responses
+- **LLM pipeline tested end-to-end** — decomposition + synthesis working with real Anthropic API
+- 11 live x402 endpoints registered (Silverback DeFi: 8 endpoints, Gloria AI: 3 endpoints)
 - Structured cost summary after each query
 - Interactive mode via Daydreams CLI extension
+- CDP Server Wallet v2 created and operational at `0x13bE67822Ea3B51bFa477A6b73DFc2C25D12359A`
 
-### What Needs Testing
-- End-to-end with a real `ANTHROPIC_API_KEY` (mock mode verified, LLM calls not yet tested)
-- Live x402 endpoint calls (need funded USDC wallet + live endpoints)
-- Interactive mode conversation flow
+### What's Next: Live x402 Testing
+- **Fund wallet**: Send USDC on Base mainnet to `0x13bE67822Ea3B51bFa477A6b73DFc2C25D12359A`
+- **Flip mock mode off**: Set `MOCK_MODE=false` in `.env`
+- **Run live**: `npx tsx src/index.ts 'Should I invest in $AERO on Base?'`
+- Expect ~$0.05-0.10 per query (5-6 endpoints at $0.001-$0.03 each + LLM costs)
+- Interactive mode conversation flow still needs testing
 
 ## Next Steps
 
 ### Phase 1 Hardening (do these first)
-1. **Test with real LLM** — Add `ANTHROPIC_API_KEY` to `.env` and run `MOCK_MODE=true npx tsx src/index.ts "Should I invest in $AERO on Base?"` to verify decomposition + synthesis work
-2. **Verify endpoint URLs** — Check which endpoints in `registry.json` are actually live. Update URLs or add new ones from the x402 ecosystem (bazaar, etc.)
-3. **Prompt iteration** — Test decomposition and synthesis prompts with varied queries, tune for quality
-4. **Memory integration** — Wire memory context into the pipeline (save query results, update endpoint reliability after each call)
-5. **Error edge cases** — Test: all endpoints fail, no matching endpoints, LLM returns malformed JSON
+1. ~~**Test with real LLM**~~ — DONE, decomposition + synthesis verified with Anthropic API
+2. ~~**Verify endpoint URLs**~~ — DONE, registry updated with 11 live endpoints (Silverback DeFi + Gloria AI)
+3. **Test live x402 payments** — Fund wallet, flip `MOCK_MODE=false`, run a real query
+4. **Prompt iteration** — Test decomposition and synthesis prompts with varied queries, tune for quality
+5. **Memory integration** — Wire memory context into the pipeline (save query results, update endpoint reliability after each call)
+6. **Error edge cases** — Test: all endpoints fail, no matching endpoints, LLM returns malformed JSON
 
 ### Phase 2 — Chat UI
 - Next.js chat interface with Vercel AI SDK (`useChat` hooks)
@@ -86,7 +91,7 @@ src/
 │       ├── billing.ts            # Track per-query costs (x402 + LLM)
 │       └── memory.ts             # JSON file persistence (past queries, reliability)
 ├── endpoints/
-│   ├── registry.json             # 6 x402 endpoints, 19 capabilities
+│   ├── registry.json             # 11 live x402 endpoints (Silverback DeFi + Gloria AI)
 │   └── client.ts                 # x402 HTTP client (mock mode, CDP wallet, timeouts)
 ├── prompts/
 │   ├── decompose.ts              # Decomposition prompt template
@@ -167,12 +172,38 @@ const response = await fetchWithPayment(endpoint.url);
 - Decomposition returns capabilities with no matching endpoint: note "data unavailable" in report
 - Never let a single endpoint failure kill the entire workflow — always produce a partial report
 
+## CDP Wallet
+
+- **Address**: `0x13bE67822Ea3B51bFa477A6b73DFc2C25D12359A`
+- **Network**: Base mainnet
+- **Token**: USDC (`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`)
+- **Wallet name**: `parallax-agent` (idempotent via `getOrCreateAccount`)
+- Created via CDP Server Wallet v2 — keys secured in AWS Nitro Enclave TEE
+
+## Live x402 Endpoints
+
+Registry updated with verified live endpoints (all return 402 Payment Required):
+
+**Silverback DeFi** (`x402.silverbackdefi.app`) — 8 endpoints:
+- top-coins ($0.001), trending-tokens ($0.001), top-pools ($0.001), dex-metrics ($0.002)
+- whale-moves ($0.01), token-audit ($0.01), technical-analysis ($0.02), defi-yield ($0.02)
+
+**Gloria AI** (`api.itsgloria.ai`) — 3 endpoints:
+- news ($0.03), recaps ($0.10), news-ticker-summary ($0.031)
+
+**Other confirmed live endpoints** (not yet in registry, potential additions):
+- Zapper (`public.zapper.xyz`) — 14 endpoints (token prices, holders, portfolio, transactions)
+- Elsa x402 (`x402-api.heyelsa.ai`) — 18 endpoints (DeFi trading, portfolio, yield)
+- Neynar (`api.neynar.com`) — Farcaster social data via x402
+- Firecrawl (`api.firecrawl.dev`) — web scraping
+
 ## Known Issues / Tech Debt
 
 - **zod v3/v4 mismatch**: Daydreams bundles zod v4 internally, our project uses zod v3. We cast with `as any`. If Daydreams updates to export zod or align versions, remove the casts.
 - **Memory not wired into pipeline**: Billing and memory contexts exist but aren't called from the main `runPipeline()` in `index.ts`. Need to add save-query-result and update-endpoint-reliability calls.
 - **LLM cost estimates are hardcoded**: `$0.003` for decomposition, `$0.008` for synthesis. Should use actual token counts from AI SDK response.
 - **Endpoint registry is static**: No runtime discovery. Phase 3 will add auto-discovery.
+- **CLI `$` escaping**: Use single quotes for queries with `$` symbols (e.g. `'Should I invest in $AERO?'`), otherwise the shell interprets `$AERO` as a variable.
 
 ## Relevant Skills
 
