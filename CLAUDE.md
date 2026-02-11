@@ -8,7 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is NOT an x402 endpoint — it is the aggregation/orchestration layer that consumes and chains other agents' endpoints.
 
-**Stack:** TypeScript (strict mode), Daydreams framework, x402 protocol, USDC on Base, CDP Server Wallet v2
+**Stack:** TypeScript (strict mode), Vercel AI SDK, x402 protocol, USDC on Base, CDP Server Wallet v2
+**Migration planned:** `@daydreamsai/core` → `@lucid-agents/*` (Lucid Agents SDK)
 **Deployment:** Railway
 **Status:** Phase 1 complete — ready for live x402 testing
 
@@ -54,20 +55,92 @@ All core modules built and wired up. The full pipeline works end-to-end in mock 
 5. **Memory integration** — Wire memory context into the pipeline (save query results, update endpoint reliability after each call)
 6. **Error edge cases** — Test: all endpoints fail, no matching endpoints, LLM returns malformed JSON
 
+### Phase 1.5 — Migrate to Lucid Agents SDK
+
+**Why:** `@daydreamsai/core` is the old framework. Lucid Agents (`@lucid-agents/*`) is the current
+SDK from the same team, purpose-built for x402 commerce agents. Migrating makes Parallax
+discoverable on xgate and sellable as a service to other agents — the key business model shift
+from cost center (CLI tool that spends USDC) to revenue generator (agent that earns USDC).
+
+**What stays the same:**
+- Pipeline logic (decompose → execute → synthesize) — untouched
+- Prompts (`src/prompts/`) — untouched
+- Endpoint registry (`src/endpoints/registry.json`) — untouched
+- Types (`src/agent/types.ts`) — untouched
+- Vercel AI SDK for LLM calls (`generateText` from `ai`) — untouched
+
+**What changes:**
+- Replace `@daydreamsai/core` + `@daydreamsai/cli` with `@lucid-agents/core` + `@lucid-agents/http`
+- Add `@lucid-agents/payments` — replaces our manual x402 client (`src/endpoints/client.ts`) with
+  built-in payment handling, policy enforcement, spend limits, and tracking
+- Add `@lucid-agents/a2a` — agent-to-agent communication, agent card generation
+- Expose `run-pipeline` as a priced Lucid entrypoint so other agents can pay to call it
+- Add `@lucid-agents/hono` (or express/next) adapter for HTTP serving
+- Remove Daydreams contexts (`src/agent/contexts/*.ts`) — replace with plain functions
+- Remove zod v3/v4 `as any` casting workarounds (Lucid uses standard zod)
+
+**Lucid packages to install:**
+- `@lucid-agents/core` — agent runtime
+- `@lucid-agents/http` — HTTP extension with SSE streaming
+- `@lucid-agents/payments` — x402 payment integration (incoming + outgoing)
+- `@lucid-agents/a2a` — agent-to-agent discovery and communication
+- `@lucid-agents/wallet` — wallet management
+- `@lucid-agents/hono` — Hono HTTP adapter (lightweight, good for Railway)
+- `@lucid-agents/cli` — scaffolding tool (optional, for reference)
+
+**Lucid agent pattern:**
+```typescript
+import { createAgent } from '@lucid-agents/core'
+import { http } from '@lucid-agents/http'
+import { payments } from '@lucid-agents/payments'
+import { a2a } from '@lucid-agents/a2a'
+import { z } from 'zod'
+
+const agent = await createAgent({ name: 'parallax', version: '1.0.0' })
+  .use(http())
+  .use(payments({ config: { receivableAddress: '0x...' } }))
+  .use(a2a())
+  .build()
+
+agent.entrypoints.add({
+  key: 'intelligence-report',
+  input: z.object({ query: z.string() }),
+  output: z.object({ report: z.string(), costUsd: z.number() }),
+  price: { amount: '0.50', currency: 'USDC' },
+  handler: async ({ input }) => {
+    // existing pipeline: decompose → execute → synthesize
+    return { output: { report, costUsd } }
+  },
+})
+```
+
+**xgate discovery:** Lucid agents auto-generate `/.well-known/agent.json` agent cards, making
+them discoverable on xgate.run. Other agents find Parallax, call the `intelligence-report`
+entrypoint, pay USDC, and get a report back.
+
+**Migration order:**
+1. Test live x402 payments with current code (validate the product works)
+2. Install Lucid packages, scaffold new entry point
+3. Move pipeline logic into a Lucid entrypoint handler
+4. Replace manual x402 client with `@lucid-agents/payments` for outgoing calls
+5. Add A2A + identity extensions
+6. Deploy to Railway, register on xgate
+7. Remove old Daydreams code and contexts
+
 ### Phase 2 — Chat UI
 - Next.js chat interface with Vercel AI SDK (`useChat` hooks)
-- Streaming report output
+- Streaming report output via Lucid SSE
 - User wallet connection (wagmi + ConnectKit)
-- User pays USDC → agent pays endpoints → retains margin
+- User pays USDC → Parallax pays endpoints → retains margin
 
 ### Phase 3 — Growth
 - Parallel endpoint execution
-- Subscription billing
-- Endpoint auto-discovery
+- Endpoint auto-discovery via xgate Bazaar API
+- ERC-8004 on-chain identity + reputation
+- A2A agent-to-agent supply chains (Parallax calls other Lucid agents as data sources)
 - Reliability scoring + smart routing
 - Custom workflow builder
 - Webhook / Telegram / Farcaster delivery
-- Deploy to Railway
 
 ## Key Documents
 
