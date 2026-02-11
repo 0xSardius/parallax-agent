@@ -3,7 +3,7 @@ import { cliExtension } from "@daydreamsai/cli";
 import { anthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
 import { generateText } from "ai";
-import type { SubTask, EndpointResult, CostEntry } from "./types.js";
+import type { SubTask, EndpointResult, CostEntry, QueryTier } from "./types.js";
 import { registryContext, getAllCapabilities, findByCapability } from "./contexts/registry.js";
 import { queryContext } from "./contexts/query.js";
 import { executionContext } from "./contexts/execution.js";
@@ -58,10 +58,11 @@ parallaxContext.setActions([
     schema: s(
       z.object({
         query: z.string().describe("The user's query to process"),
+        tier: z.enum(["standard", "premium"]).default("standard").describe("Tier: 'standard' for fast/cheap analysis, 'premium' for deep intelligence with Einstein AI and web search"),
       })
     ),
     handler: async (args: any, ctx: any) => {
-      const { query } = args as { query: string };
+      const { query, tier = "standard" } = args as { query: string; tier?: QueryTier };
       ctx.memory.currentQuery = query;
       ctx.memory.status = "processing";
 
@@ -71,7 +72,7 @@ parallaxContext.setActions([
       try {
         // --- Step 1: Decompose query ---
         logInfo("=== Step 1: Query Decomposition ===");
-        const capabilities = getAllCapabilities();
+        const capabilities = getAllCapabilities(tier);
         const decompositionPrompt = buildDecompositionPrompt(query, capabilities);
 
         const decompositionResult = await generateText({
@@ -104,7 +105,7 @@ parallaxContext.setActions([
         const endpointResults: EndpointResult[] = [];
 
         for (const subTask of sorted) {
-          const endpoint = findByCapability(subTask.requiredCapability);
+          const endpoint = findByCapability(subTask.requiredCapability, tier);
 
           if (!endpoint) {
             logInfo(`No endpoint for: ${subTask.requiredCapability} — skipping`);

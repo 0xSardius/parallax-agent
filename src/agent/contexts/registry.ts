@@ -1,6 +1,6 @@
 import { context, action } from "@daydreamsai/core";
 import { z } from "zod";
-import { X402EndpointSchema, type X402Endpoint } from "../types.js";
+import { X402EndpointSchema, type X402Endpoint, type QueryTier } from "../types.js";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -14,9 +14,14 @@ const endpoints: X402Endpoint[] = (registryData as unknown[]).map((e) =>
   X402EndpointSchema.parse(e)
 );
 
-function getAllCapabilities(): string[] {
+function getEndpointsForTier(tier: QueryTier): X402Endpoint[] {
+  if (tier === "premium") return endpoints; // premium gets everything
+  return endpoints.filter((ep) => ep.tier === "standard");
+}
+
+function getAllCapabilities(tier: QueryTier = "standard"): string[] {
   const caps = new Set<string>();
-  for (const ep of endpoints) {
+  for (const ep of getEndpointsForTier(tier)) {
     for (const cap of ep.capabilities) {
       caps.add(cap);
     }
@@ -24,8 +29,8 @@ function getAllCapabilities(): string[] {
   return Array.from(caps);
 }
 
-function findByCapability(capability: string): X402Endpoint | undefined {
-  return endpoints
+function findByCapability(capability: string, tier: QueryTier = "standard"): X402Endpoint | undefined {
+  return getEndpointsForTier(tier)
     .filter((ep) => ep.capabilities.includes(capability))
     .sort((a, b) => b.reliability - a.reliability)[0];
 }
@@ -94,4 +99,4 @@ registryContext.setActions([
   }),
 ]);
 
-export { endpoints, getAllCapabilities, findByCapability };
+export { endpoints, getAllCapabilities, findByCapability, getEndpointsForTier };

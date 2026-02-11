@@ -2,20 +2,22 @@ import "dotenv/config";
 import { generateText } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { createParallaxAgent, parallaxContext } from "./agent/parallax.js";
-import { DecompositionResultSchema, type EndpointResult, type CostEntry } from "./agent/types.js";
+import { DecompositionResultSchema, type EndpointResult, type CostEntry, type QueryTier } from "./agent/types.js";
 import { getAllCapabilities, findByCapability } from "./agent/contexts/registry.js";
 import { callEndpoint } from "./endpoints/client.js";
 import { buildDecompositionPrompt } from "./prompts/decompose.js";
 import { buildSynthesisPrompt } from "./prompts/synthesize.js";
 import { logInfo, logError } from "./utils/logger.js";
 
-async function runPipeline(query: string) {
+async function runPipeline(query: string, tier: QueryTier = "standard") {
   const pipelineStart = Date.now();
   const costEntries: CostEntry[] = [];
 
+  logInfo(`Tier: ${tier.toUpperCase()}`);
+
   // --- Step 1: Decompose query ---
   logInfo("=== Step 1: Query Decomposition ===");
-  const capabilities = getAllCapabilities();
+  const capabilities = getAllCapabilities(tier);
   const decompositionPrompt = buildDecompositionPrompt(query, capabilities);
 
   const decompositionResult = await generateText({
@@ -46,7 +48,7 @@ async function runPipeline(query: string) {
   const endpointResults: EndpointResult[] = [];
 
   for (const subTask of sorted) {
-    const endpoint = findByCapability(subTask.requiredCapability);
+    const endpoint = findByCapability(subTask.requiredCapability, tier);
 
     if (!endpoint) {
       logInfo(`No endpoint for: ${subTask.requiredCapability} — skipping`);
@@ -113,7 +115,7 @@ async function runPipeline(query: string) {
   console.log("=".repeat(60));
 
   // --- Print cost summary ---
-  console.log("\n--- Cost Summary ---");
+  console.log(`\n--- Cost Summary (${tier.toUpperCase()} tier) ---`);
   for (const entry of costEntries) {
     console.log(`  ${entry.type.padEnd(4)} | ${entry.description}: $${entry.costUsd.toFixed(4)}`);
   }
@@ -125,7 +127,26 @@ async function runPipeline(query: string) {
 }
 
 async function main() {
-  const query = process.argv[2];
+  const args = process.argv.slice(2);
+
+  // Parse --tier flag
+  let tier: QueryTier = "standard";
+  const tierIdx = args.indexOf("--tier");
+  if (tierIdx !== -1 && args[tierIdx + 1]) {
+    const tierArg = args[tierIdx + 1];
+    if (tierArg === "premium" || tierArg === "standard") {
+      tier = tierArg;
+    }
+    args.splice(tierIdx, 2);
+  }
+  // Shorthand: --premium
+  const premIdx = args.indexOf("--premium");
+  if (premIdx !== -1) {
+    tier = "premium";
+    args.splice(premIdx, 1);
+  }
+
+  const query = args[0];
 
   logInfo("Parallax — x402 Intelligence Orchestration Agent");
   logInfo(`Mock mode: ${process.env.MOCK_MODE === "true" ? "ON" : "OFF"}`);
@@ -136,7 +157,7 @@ async function main() {
     logInfo(`Processing query: "${query}"\n`);
 
     try {
-      await runPipeline(query);
+      await runPipeline(query, tier);
     } catch (error) {
       logError("Pipeline failed", error);
       process.exit(1);

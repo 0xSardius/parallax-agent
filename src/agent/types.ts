@@ -12,7 +12,10 @@ export const X402EndpointSchema = z.object({
   description: z.string(),
   defaultParams: z.record(z.string()).optional(),
   method: z.enum(["GET", "POST"]).optional(),
+  tier: z.enum(["standard", "premium"]).default("standard"),
 });
+
+export type QueryTier = "standard" | "premium";
 
 export type X402Endpoint = z.infer<typeof X402EndpointSchema>;
 

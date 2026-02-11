@@ -7,7 +7,8 @@
     "costPerCall": 0.001,
     "reliability": 0.9,
     "description": "Top cryptocurrencies ranked by market cap with price data",
-    "defaultParams": { "chain": "base" }
+    "defaultParams": { "chain": "base" },
+    "tier": "standard"
   },
   {
     "id": "silverback-whale-moves",
@@ -17,7 +18,8 @@
     "costPerCall": 0.01,
     "reliability": 0.9,
     "description": "Monitor whale buys, sells, and transfers for any token",
-    "defaultParams": { "chain": "base" }
+    "defaultParams": { "chain": "base" },
+    "tier": "standard"
   },
   {
     "id": "silverback-token-audit",
@@ -27,7 +29,8 @@
     "costPerCall": 0.01,
     "reliability": 0.9,
     "description": "Token security audit: honeypot detection, tax analysis, ownership risks",
-    "defaultParams": { "chain": "base" }
+    "defaultParams": { "chain": "base" },
+    "tier": "standard"
   },
   {
     "id": "silverback-technical",
@@ -37,7 +40,8 @@
     "costPerCall": 0.02,
     "reliability": 0.85,
     "description": "RSI, MACD, Bollinger Bands technical analysis for tokens",
-    "defaultParams": { "chain": "base" }
+    "defaultParams": { "chain": "base" },
+    "tier": "standard"
   },
   {
     "id": "silverback-trending",
@@ -47,7 +51,8 @@
     "costPerCall": 0.001,
     "reliability": 0.9,
     "description": "Trending tokens and pools by volume and activity on a specific chain",
-    "defaultParams": { "chain": "base" }
+    "defaultParams": { "chain": "base" },
+    "tier": "standard"
   },
   {
     "id": "silverback-top-pools",
@@ -57,7 +62,8 @@
     "costPerCall": 0.001,
     "reliability": 0.9,
     "description": "Top yielding pools on Base DEXes",
-    "defaultParams": { "chain": "base" }
+    "defaultParams": { "chain": "base" },
+    "tier": "standard"
   },
   {
     "id": "silverback-dex-metrics",
@@ -67,7 +73,8 @@
     "costPerCall": 0.002,
     "reliability": 0.9,
     "description": "Base DEX ecosystem: volume, TVL, gas stats, top pairs",
-    "defaultParams": { "chain": "base" }
+    "defaultParams": { "chain": "base" },
+    "tier": "standard"
   },
   {
     "id": "silverback-defi-yield",
@@ -77,7 +84,8 @@
     "costPerCall": 0.02,
     "reliability": 0.85,
     "description": "DeFi yield opportunities on Base",
-    "defaultParams": { "chain": "base" }
+    "defaultParams": { "chain": "base" },
+    "tier": "standard"
   },
   {
     "id": "gloria-news",
@@ -87,17 +95,19 @@
     "costPerCall": 0.03,
     "reliability": 0.85,
     "description": "Latest 10 crypto news headlines by category (ai, base, bitcoin, crypto, defi, ethereum, macro, solana)",
-    "defaultParams": { "category": "base" }
+    "defaultParams": { "category": "base" },
+    "tier": "standard"
   },
   {
     "id": "gloria-recaps",
     "name": "Gloria AI — Recaps",
     "url": "https://api.itsgloria.ai/recaps",
-    "capabilities": ["market_sentiment", "crypto_news"],
+    "capabilities": ["market_sentiment"],
     "costPerCall": 0.10,
     "reliability": 0.85,
     "description": "12-24 hour news recap and sentiment summary by category",
-    "defaultParams": { "category": "base" }
+    "defaultParams": { "category": "base" },
+    "tier": "premium"
   },
   {
     "id": "gloria-ticker",
@@ -106,7 +116,8 @@
     "capabilities": ["token_analysis", "crypto_news"],
     "costPerCall": 0.031,
     "reliability": 0.85,
-    "description": "24-hour token activity summary with key events and price context"
+    "description": "24-hour token activity summary with key events and price context",
+    "tier": "standard"
   },
   {
     "id": "neynar-cast-search",
@@ -115,7 +126,8 @@
     "capabilities": ["social_data", "farcaster_trends"],
     "costPerCall": 0.001,
     "reliability": 0.9,
-    "description": "Search Farcaster casts by keyword for social sentiment and community discussion"
+    "description": "Search Farcaster casts by keyword for social sentiment and community discussion",
+    "tier": "standard"
   },
   {
     "id": "neynar-user-search",
@@ -124,7 +136,8 @@
     "capabilities": ["social_data"],
     "costPerCall": 0.001,
     "reliability": 0.9,
-    "description": "Search Farcaster users and profiles for community analysis"
+    "description": "Search Farcaster users and profiles for community analysis",
+    "tier": "standard"
   },
   {
     "id": "neynar-feed",
@@ -133,7 +146,8 @@
     "capabilities": ["social_data", "community_sentiment"],
     "costPerCall": 0.001,
     "reliability": 0.9,
-    "description": "Fetch Farcaster feeds for real-time social activity and sentiment"
+    "description": "Fetch Farcaster feeds for real-time social activity and sentiment",
+    "tier": "standard"
   },
   {
     "id": "neynar-channel-search",
@@ -142,7 +156,8 @@
     "capabilities": ["social_data", "farcaster_trends"],
     "costPerCall": 0.001,
     "reliability": 0.9,
-    "description": "Search Farcaster channels for community and topic analysis"
+    "description": "Search Farcaster channels for community and topic analysis",
+    "tier": "standard"
   },
   {
     "id": "elsa-search-token",
@@ -152,7 +167,8 @@
     "costPerCall": 0.001,
     "reliability": 0.85,
     "description": "Search for token by name or symbol across multiple chains",
-    "method": "POST"
+    "method": "POST",
+    "tier": "standard"
   },
   {
     "id": "elsa-token-price",
@@ -162,7 +178,8 @@
     "costPerCall": 0.002,
     "reliability": 0.85,
     "description": "Get token price with best-price discovery across 20+ DEX protocols",
-    "method": "POST"
+    "method": "POST",
+    "tier": "standard"
   },
   {
     "id": "elsa-analyze-wallet",
@@ -172,7 +189,8 @@
     "costPerCall": 0.02,
     "reliability": 0.85,
     "description": "Deep wallet analysis: holdings, PnL, risk scoring, diversification",
-    "method": "POST"
+    "method": "POST",
+    "tier": "premium"
   },
   {
     "id": "elsa-yield-suggestions",
@@ -182,7 +200,8 @@
     "costPerCall": 0.02,
     "reliability": 0.85,
     "description": "AI-powered yield farming recommendations based on risk profile",
-    "method": "POST"
+    "method": "POST",
+    "tier": "standard"
   },
   {
     "id": "elsa-gas-prices",
@@ -192,7 +211,8 @@
     "costPerCall": 0.001,
     "reliability": 0.85,
     "description": "Current gas prices across supported networks",
-    "method": "POST"
+    "method": "POST",
+    "tier": "standard"
   },
   {
     "id": "elsa-portfolio",
@@ -202,7 +222,8 @@
     "costPerCall": 0.01,
     "reliability": 0.85,
     "description": "Multi-chain portfolio overview with balances and positions across 15+ chains",
-    "method": "POST"
+    "method": "POST",
+    "tier": "standard"
   },
   {
     "id": "firecrawl-search",
@@ -212,7 +233,8 @@
     "costPerCall": 0.01,
     "reliability": 0.8,
     "description": "Search the web and get LLM-ready markdown content. Use for breaking news, governance proposals, or data not covered by other endpoints",
-    "method": "POST"
+    "method": "POST",
+    "tier": "premium"
   },
   {
     "id": "einstein-latest-pairs",
@@ -221,19 +243,21 @@
     "capabilities": ["new_token_launches", "blockchain_intelligence"],
     "costPerCall": 0.25,
     "reliability": 0.85,
-    "description": "Latest deployed tokens on-chain with liquidity pool data. Deep Bitquery intelligence. EXPENSIVE: $0.25/call",
+    "description": "Latest deployed tokens on-chain with liquidity pool data. Deep Bitquery intelligence",
     "method": "POST",
-    "defaultParams": { "chain": "base", "limit": "10" }
+    "defaultParams": { "chain": "base", "limit": "10" },
+    "tier": "premium"
   },
   {
     "id": "einstein-smart-money",
     "name": "Einstein AI — Smart Money Leaderboard",
     "url": "https://emc2ai.io/x402/bitquery/smart-money/raw",
-    "capabilities": ["smart_money_leaderboard", "smart_money"],
+    "capabilities": ["smart_money_leaderboard"],
     "costPerCall": 0.85,
     "reliability": 0.85,
-    "description": "Top trader wallets with buy/sell flow analysis and accumulation patterns. Deep Bitquery intelligence. VERY EXPENSIVE: $0.85/call",
+    "description": "Top trader wallets with buy/sell flow analysis and accumulation patterns. Deep Bitquery intelligence",
     "method": "POST",
-    "defaultParams": { "chain": "base", "limit": "10", "timeperiod": "24h" }
+    "defaultParams": { "chain": "base", "limit": "10", "timeperiod": "24h" },
+    "tier": "premium"
   }
 ]
