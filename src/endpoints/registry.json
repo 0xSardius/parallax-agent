@@ -6,7 +6,8 @@
     "capabilities": ["token_analysis", "market_data"],
     "costPerCall": 0.001,
     "reliability": 0.9,
-    "description": "Top cryptocurrencies ranked by market cap with price data"
+    "description": "Top cryptocurrencies ranked by market cap with price data",
+    "defaultParams": { "chain": "base" }
   },
   {
     "id": "silverback-whale-moves",
@@ -15,7 +16,8 @@
     "capabilities": ["whale_tracking", "smart_money"],
     "costPerCall": 0.01,
     "reliability": 0.9,
-    "description": "Monitor whale buys, sells, and transfers for any token"
+    "description": "Monitor whale buys, sells, and transfers for any token",
+    "defaultParams": { "chain": "base" }
   },
   {
     "id": "silverback-token-audit",
@@ -24,7 +26,8 @@
     "capabilities": ["risk_intelligence", "token_security"],
     "costPerCall": 0.01,
     "reliability": 0.9,
-    "description": "Token security audit: honeypot detection, tax analysis, ownership risks"
+    "description": "Token security audit: honeypot detection, tax analysis, ownership risks",
+    "defaultParams": { "chain": "base" }
   },
   {
     "id": "silverback-technical",
@@ -33,16 +36,18 @@
     "capabilities": ["technical_analysis", "market_risk"],
     "costPerCall": 0.02,
     "reliability": 0.85,
-    "description": "RSI, MACD, Bollinger Bands technical analysis for tokens"
+    "description": "RSI, MACD, Bollinger Bands technical analysis for tokens",
+    "defaultParams": { "chain": "base" }
   },
   {
     "id": "silverback-trending",
     "name": "Silverback DeFi — Trending Tokens",
     "url": "https://x402.silverbackdefi.app/api/v1/trending-tokens",
-    "capabilities": ["market_sentiment", "trending"],
+    "capabilities": ["trending"],
     "costPerCall": 0.001,
     "reliability": 0.9,
-    "description": "Trending tokens and pools by volume and activity"
+    "description": "Trending tokens and pools by volume and activity on a specific chain",
+    "defaultParams": { "chain": "base" }
   },
   {
     "id": "silverback-top-pools",
@@ -51,7 +56,8 @@
     "capabilities": ["yield_data", "defi_portfolio", "tvl_tracking"],
     "costPerCall": 0.001,
     "reliability": 0.9,
-    "description": "Top yielding pools on Base DEXes"
+    "description": "Top yielding pools on Base DEXes",
+    "defaultParams": { "chain": "base" }
   },
   {
     "id": "silverback-dex-metrics",
@@ -60,7 +66,8 @@
     "capabilities": ["dex_flow", "blockchain_intelligence"],
     "costPerCall": 0.002,
     "reliability": 0.9,
-    "description": "Base DEX ecosystem: volume, TVL, gas stats, top pairs"
+    "description": "Base DEX ecosystem: volume, TVL, gas stats, top pairs",
+    "defaultParams": { "chain": "base" }
   },
   {
     "id": "silverback-defi-yield",
@@ -69,7 +76,8 @@
     "capabilities": ["apy_comparison", "yield_data"],
     "costPerCall": 0.02,
     "reliability": 0.85,
-    "description": "DeFi yield opportunities on Base"
+    "description": "DeFi yield opportunities on Base",
+    "defaultParams": { "chain": "base" }
   },
   {
     "id": "gloria-news",
@@ -78,7 +86,8 @@
     "capabilities": ["crypto_news", "regulatory_updates"],
     "costPerCall": 0.03,
     "reliability": 0.85,
-    "description": "Latest 10 crypto news headlines by category (ai, base, bitcoin, crypto, defi, ethereum, macro, solana)"
+    "description": "Latest 10 crypto news headlines by category (ai, base, bitcoin, crypto, defi, ethereum, macro, solana)",
+    "defaultParams": { "category": "base" }
   },
   {
     "id": "gloria-recaps",
@@ -87,7 +96,8 @@
     "capabilities": ["market_sentiment", "crypto_news"],
     "costPerCall": 0.10,
     "reliability": 0.85,
-    "description": "12-24 hour news recap and sentiment summary by category"
+    "description": "12-24 hour news recap and sentiment summary by category",
+    "defaultParams": { "category": "base" }
   },
   {
     "id": "gloria-ticker",

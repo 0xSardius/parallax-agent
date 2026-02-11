@@ -140,10 +140,10 @@ export async function callEndpoint(
     const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
     const url = new URL(endpoint.url);
-    if (params) {
-      for (const [key, value] of Object.entries(params)) {
-        url.searchParams.set(key, String(value));
-      }
+    // Merge default params from registry first, then override with call-specific params
+    const mergedParams = { ...endpoint.defaultParams, ...params };
+    for (const [key, value] of Object.entries(mergedParams)) {
+      url.searchParams.set(key, String(value));
     }
 
     const response = await pFetch(url.toString(), {
