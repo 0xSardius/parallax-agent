@@ -11,6 +11,7 @@ export const X402EndpointSchema = z.object({
   reliability: z.number().min(0).max(1),
   description: z.string(),
   defaultParams: z.record(z.string()).optional(),
+  method: z.enum(["GET", "POST"]).optional(),
 });
 
 export type X402Endpoint = z.infer<typeof X402EndpointSchema>;

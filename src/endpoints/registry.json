@@ -107,5 +107,133 @@
     "costPerCall": 0.031,
     "reliability": 0.85,
     "description": "24-hour token activity summary with key events and price context"
+  },
+  {
+    "id": "neynar-cast-search",
+    "name": "Neynar — Cast Search",
+    "url": "https://api.neynar.com/v2/farcaster/cast/search",
+    "capabilities": ["social_data", "farcaster_trends"],
+    "costPerCall": 0.001,
+    "reliability": 0.9,
+    "description": "Search Farcaster casts by keyword for social sentiment and community discussion"
+  },
+  {
+    "id": "neynar-user-search",
+    "name": "Neynar — User Search",
+    "url": "https://api.neynar.com/v2/farcaster/user/search",
+    "capabilities": ["social_data"],
+    "costPerCall": 0.001,
+    "reliability": 0.9,
+    "description": "Search Farcaster users and profiles for community analysis"
+  },
+  {
+    "id": "neynar-feed",
+    "name": "Neynar — Feed",
+    "url": "https://api.neynar.com/v2/farcaster/feed",
+    "capabilities": ["social_data", "community_sentiment"],
+    "costPerCall": 0.001,
+    "reliability": 0.9,
+    "description": "Fetch Farcaster feeds for real-time social activity and sentiment"
+  },
+  {
+    "id": "neynar-channel-search",
+    "name": "Neynar — Channel Search",
+    "url": "https://api.neynar.com/v2/farcaster/channel/search",
+    "capabilities": ["social_data", "farcaster_trends"],
+    "costPerCall": 0.001,
+    "reliability": 0.9,
+    "description": "Search Farcaster channels for community and topic analysis"
+  },
+  {
+    "id": "elsa-search-token",
+    "name": "Elsa x402 — Search Token",
+    "url": "https://x402-api.heyelsa.ai/api/search_token",
+    "capabilities": ["token_search"],
+    "costPerCall": 0.001,
+    "reliability": 0.85,
+    "description": "Search for token by name or symbol across multiple chains",
+    "method": "POST"
+  },
+  {
+    "id": "elsa-token-price",
+    "name": "Elsa x402 — Token Price",
+    "url": "https://x402-api.heyelsa.ai/api/get_token_price",
+    "capabilities": ["token_price", "token_analysis"],
+    "costPerCall": 0.002,
+    "reliability": 0.85,
+    "description": "Get token price with best-price discovery across 20+ DEX protocols",
+    "method": "POST"
+  },
+  {
+    "id": "elsa-analyze-wallet",
+    "name": "Elsa x402 — Analyze Wallet",
+    "url": "https://x402-api.heyelsa.ai/api/analyze_wallet",
+    "capabilities": ["wallet_analysis"],
+    "costPerCall": 0.02,
+    "reliability": 0.85,
+    "description": "Deep wallet analysis: holdings, PnL, risk scoring, diversification",
+    "method": "POST"
+  },
+  {
+    "id": "elsa-yield-suggestions",
+    "name": "Elsa x402 — Yield Suggestions",
+    "url": "https://x402-api.heyelsa.ai/api/get_yield_suggestions",
+    "capabilities": ["yield_suggestions", "yield_data"],
+    "costPerCall": 0.02,
+    "reliability": 0.85,
+    "description": "AI-powered yield farming recommendations based on risk profile",
+    "method": "POST"
+  },
+  {
+    "id": "elsa-gas-prices",
+    "name": "Elsa x402 — Gas Prices",
+    "url": "https://x402-api.heyelsa.ai/api/get_gas_prices",
+    "capabilities": ["gas_data"],
+    "costPerCall": 0.001,
+    "reliability": 0.85,
+    "description": "Current gas prices across supported networks",
+    "method": "POST"
+  },
+  {
+    "id": "elsa-portfolio",
+    "name": "Elsa x402 — Portfolio",
+    "url": "https://x402-api.heyelsa.ai/api/get_portfolio",
+    "capabilities": ["defi_portfolio", "wallet_analysis"],
+    "costPerCall": 0.01,
+    "reliability": 0.85,
+    "description": "Multi-chain portfolio overview with balances and positions across 15+ chains",
+    "method": "POST"
+  },
+  {
+    "id": "firecrawl-search",
+    "name": "Firecrawl — Web Search",
+    "url": "https://api.firecrawl.dev/v1/x402/search",
+    "capabilities": ["web_search"],
+    "costPerCall": 0.01,
+    "reliability": 0.8,
+    "description": "Search the web and get LLM-ready markdown content. Use for breaking news, governance proposals, or data not covered by other endpoints",
+    "method": "POST"
+  },
+  {
+    "id": "einstein-latest-pairs",
+    "name": "Einstein AI — Latest Pairs",
+    "url": "https://emc2ai.io/x402/bitquery/latest-pairs/raw",
+    "capabilities": ["new_token_launches", "blockchain_intelligence"],
+    "costPerCall": 0.25,
+    "reliability": 0.85,
+    "description": "Latest deployed tokens on-chain with liquidity pool data. Deep Bitquery intelligence. EXPENSIVE: $0.25/call",
+    "method": "POST",
+    "defaultParams": { "chain": "base", "limit": "10" }
+  },
+  {
+    "id": "einstein-smart-money",
+    "name": "Einstein AI — Smart Money Leaderboard",
+    "url": "https://emc2ai.io/x402/bitquery/smart-money/raw",
+    "capabilities": ["smart_money_leaderboard", "smart_money"],
+    "costPerCall": 0.85,
+    "reliability": 0.85,
+    "description": "Top trader wallets with buy/sell flow analysis and accumulation patterns. Deep Bitquery intelligence. VERY EXPENSIVE: $0.85/call",
+    "method": "POST",
+    "defaultParams": { "chain": "base", "limit": "10", "timeperiod": "24h" }
   }
 ]

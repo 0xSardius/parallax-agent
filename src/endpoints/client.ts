@@ -6,7 +6,8 @@ import { privateKeyToAccount } from "viem/accounts";
 import type { X402Endpoint, EndpointResult } from "../agent/types.js";
 import { logEndpointCall, logInfo, logError } from "../utils/logger.js";
 
-const TIMEOUT_MS = 10_000;
+const DEFAULT_TIMEOUT_MS = 10_000;
+const EXPENSIVE_TIMEOUT_MS = 90_000; // Einstein AI deep queries need longer
 
 // Mock responses for development without spending USDC
 const MOCK_RESPONSES: Record<string, unknown> = {
@@ -66,6 +67,30 @@ const MOCK_RESPONSES: Record<string, unknown> = {
   },
   "tvl_tracking": {
     data: { totalTvl: "2.1B", change24h: "+3.2%", topPool: "AERO/USDC" },
+  },
+  "web_search": {
+    data: { results: [{ title: "Base L2 ecosystem report", url: "https://example.com/base", snippet: "Base network TVL reaches $10B..." }] },
+  },
+  "token_search": {
+    data: { tokens: [{ symbol: "AERO", name: "Aerodrome Finance", address: "0x940181a94A35A4569E4529A3CDfB74e38FD98631", chain: "base" }] },
+  },
+  "token_price": {
+    data: { symbol: "AERO", price: 1.42, change24h: "+5.2%", volume24h: "12.3M", marketCap: "580M" },
+  },
+  "wallet_analysis": {
+    data: { totalValue: "$245K", topHoldings: ["USDC", "WETH", "AERO"], riskScore: 42, diversification: "moderate" },
+  },
+  "yield_suggestions": {
+    data: { opportunities: [{ protocol: "Aerodrome", pool: "AERO/USDC", apy: 18.5, risk: "medium" }] },
+  },
+  "gas_data": {
+    data: { baseFee: "0.005 Gwei", estimatedSwapCost: "$0.003", network: "base" },
+  },
+  "new_token_launches": {
+    data: { tokens: [{ symbol: "NEW1", launchDate: "2026-02-08", liquidity: "$500K", chain: "base" }] },
+  },
+  "smart_money_leaderboard": {
+    data: { topTraders: [{ address: "0xabc...", pnl30d: "+$2.1M", winRate: "72%", topHolding: "AERO" }] },
   },
 };
 
@@ -134,22 +159,35 @@ export async function callEndpoint(
   }
 
   // Live mode — make real x402-paid HTTP requests
+  const timeoutMs = endpoint.costPerCall >= 0.10 ? EXPENSIVE_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
   try {
     const pFetch = await initPaymentFetch();
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     const url = new URL(endpoint.url);
-    // Merge default params from registry first, then override with call-specific params
     const mergedParams = { ...endpoint.defaultParams, ...params };
-    for (const [key, value] of Object.entries(mergedParams)) {
-      url.searchParams.set(key, String(value));
-    }
+    const method = endpoint.method ?? "GET";
 
-    const response = await pFetch(url.toString(), {
-      method: "GET",
-      signal: controller.signal,
-    });
+    let response: Response;
+    if (method === "POST") {
+      // POST endpoints receive params as JSON body
+      response = await pFetch(url.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(mergedParams),
+        signal: controller.signal,
+      });
+    } else {
+      // GET endpoints receive params as query string
+      for (const [key, value] of Object.entries(mergedParams)) {
+        url.searchParams.set(key, String(value));
+      }
+      response = await pFetch(url.toString(), {
+        method: "GET",
+        signal: controller.signal,
+      });
+    }
     clearTimeout(timeout);
 
     const latencyMs = Date.now() - startTime;
@@ -201,7 +239,7 @@ export async function callEndpoint(
     const errorMessage =
       error instanceof Error
         ? error.name === "AbortError"
-          ? `Timeout after ${TIMEOUT_MS}ms`
+          ? `Timeout after ${timeoutMs}ms`
           : error.message
         : String(error);
 
