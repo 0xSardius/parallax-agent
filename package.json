@@ -6,19 +6,25 @@
   "main": "src/index.ts",
   "scripts": {
     "start": "tsx src/index.ts",
+    "serve": "tsx src/server.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.59",
     "@coinbase/cdp-sdk": "^1.44.0",
-    "@daydreamsai/cli": "^0.3.22",
-    "@daydreamsai/core": "^0.3.22",
+    "@hono/node-server": "^1.19.9",
+    "@lucid-agents/a2a": "^0.6.1",
+    "@lucid-agents/core": "^2.4.3",
+    "@lucid-agents/hono": "^0.9.5",
+    "@lucid-agents/http": "^1.10.1",
+    "@lucid-agents/payments": "^2.4.3",
+    "@lucid-agents/wallet": "^0.6.1",
     "@x402/evm": "^2.3.0",
     "@x402/fetch": "^2.3.0",
     "ai": "^5.0.30",
     "dotenv": "^16.4.7",
     "viem": "^2.23.0",
-    "zod": "^3.25.76"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

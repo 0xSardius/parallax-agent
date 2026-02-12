@@ -8,26 +8,56 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is NOT an x402 endpoint — it is the aggregation/orchestration layer that consumes and chains other agents' endpoints.
 
-**Stack:** TypeScript (strict mode), Vercel AI SDK, x402 protocol, USDC on Base, CDP Server Wallet v2
-**Migration planned:** `@daydreamsai/core` → `@lucid-agents/*` (Lucid Agents SDK)
+**Stack:** TypeScript (strict mode), Vercel AI SDK, Hono, x402 protocol, USDC on Base, CDP Server Wallet v2
 **Deployment:** Railway
-**Status:** Phase 1 complete — ready for live x402 testing
+**Status:** Phase 1.5 migration in progress — Daydreams removed, server entry point drafted, needs runtime testing
+
+## RESUME HERE — Phase 1.5 Migration Status
+
+**When starting a new session, give the user a rundown of this section before proceeding.**
+
+### What was done
+1. **Extracted pipeline** — `runPipeline()` moved from `index.ts` into `src/pipeline.ts` (shared by CLI + server)
+2. **Removed Daydreams** — Uninstalled `@daydreamsai/core` + `@daydreamsai/cli`, deleted all Daydreams context files (`parallax.ts`, `query.ts`, `execution.ts`, `synthesis.ts`, `billing.ts`, `memory.ts`)
+3. **Installed Lucid packages** — `@lucid-agents/core`, `http`, `payments`, `hono`, `a2a`, `wallet` all in `package.json`
+4. **Upgraded zod v3 → v4** — Required by Lucid. Fixed `z.record()` call in `types.ts`
+5. **Simplified registry** — `src/agent/contexts/registry.ts` is now pure functions only (no Daydreams wrappers)
+6. **CLI still works** — `src/index.ts` imports from `pipeline.ts`, same behavior as before
+7. **Drafted `src/server.ts`** — Plain Hono server with Lucid-compatible routes (see blocker below)
+8. **TypeScript compiles clean** — `npx tsc --noEmit` passes
+
+### Blocker: Lucid SDK is Bun-only
+`@lucid-agents/payments` has a **top-level `import { Database } from 'bun:sqlite'`** in its dist bundle. Both `@lucid-agents/core` and `@lucid-agents/hono` depend on it transitively, so the entire Lucid SDK crashes on Node.js with `ERR_UNSUPPORTED_ESM_URL_SCHEME`.
+
+**Consequence:** We cannot use `createAgent()` / `createAgentApp()` from Lucid on Node.js. The current `src/server.ts` uses plain Hono instead, implementing the same routes and agent card format manually.
+
+**Options to evaluate next session:**
+- **Option A:** Keep plain Hono server (current approach). Matches Lucid's route pattern, easy to swap in real SDK later. Works on Node.js + Railway today.
+- **Option B:** Switch runtime to Bun. Lucid SDK works natively, but requires changing all tooling and Railway config.
+- **Option C:** Wait for Lucid to ship a Node-compatible build, keep the packages installed but unused.
+
+### What's left to finish
+- **Runtime test `src/server.ts`** — Start server, curl `/health`, `/entrypoints`, `/.well-known/agent-card.json`
+- **Decide on Lucid blocker** — Pick option A/B/C above
+- **Update `.env.example`** — Add `PORT`, `AGENT_URL` vars
+- **Update this CLAUDE.md** — Clean up architecture diagram, remove stale Daydreams references
+- **Commit the server** once it's tested and working
 
 ## Build Progress
 
 ### Phase 1 — COMPLETE
-All core modules built and wired up. The full pipeline works end-to-end in mock mode.
+Core pipeline works end-to-end in mock mode and with real Anthropic API.
 
-| Step | Module | Status | Files |
-|------|--------|--------|-------|
-| 1 | Project scaffold + dependencies | Done | `package.json`, `tsconfig.json`, `.env.example`, `.gitignore` |
-| 2 | Types + endpoint registry | Done | `src/agent/types.ts`, `src/endpoints/registry.json`, `src/agent/contexts/registry.ts` |
-| 3 | x402 client | Done | `src/endpoints/client.ts`, `src/utils/logger.ts` |
-| 4 | Query decomposition | Done | `src/prompts/decompose.ts`, `src/agent/contexts/query.ts` |
-| 5 | Execution context | Done | `src/agent/contexts/execution.ts` |
-| 6 | Synthesis context | Done | `src/prompts/synthesize.ts`, `src/agent/contexts/synthesis.ts` |
-| 7 | Billing + memory | Done | `src/agent/contexts/billing.ts`, `src/agent/contexts/memory.ts` |
-| 8 | Agent assembly + CLI | Done | `src/agent/parallax.ts`, `src/index.ts` |
+### Phase 1.5 — IN PROGRESS (Lucid Migration)
+
+| Step | What | Status |
+|------|------|--------|
+| 1 | Extract pipeline to `src/pipeline.ts` | Done |
+| 2 | Install Lucid packages, remove Daydreams | Done |
+| 3 | Simplify registry to pure functions | Done |
+| 4 | Create server entry point (`src/server.ts`) | Draft — needs runtime test |
+| 5 | Delete old Daydreams files | Done |
+| 6 | Update CLAUDE.md, .env.example, scripts | Partial |
 
 ### What Works
 - Full pipeline: query → decompose → execute → synthesize → markdown report
@@ -35,7 +65,6 @@ All core modules built and wired up. The full pipeline works end-to-end in mock 
 - **LLM pipeline tested end-to-end** — decomposition + synthesis working with real Anthropic API
 - 11 live x402 endpoints registered (Silverback DeFi: 8 endpoints, Gloria AI: 3 endpoints)
 - Structured cost summary after each query
-- Interactive mode via Daydreams CLI extension
 - CDP Server Wallet v2 created and operational at `0x13bE67822Ea3B51bFa477A6b73DFc2C25D12359A`
 
 ### What's Next: Live x402 Testing
@@ -43,7 +72,6 @@ All core modules built and wired up. The full pipeline works end-to-end in mock 
 - **Flip mock mode off**: Set `MOCK_MODE=false` in `.env`
 - **Run live**: `npx tsx src/index.ts 'Should I invest in $AERO on Base?'`
 - Expect ~$0.05-0.10 per query (5-6 endpoints at $0.001-$0.03 each + LLM costs)
-- Interactive mode conversation flow still needs testing
 
 ## Next Steps
 
