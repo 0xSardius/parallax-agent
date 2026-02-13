@@ -13,6 +13,15 @@ Lessons learned, gotchas, and decisions made while building Parallax.
 - **Single-query mode runs pipeline directly** instead of going through Daydreams `agent.send()`. The `send()` return type (`AnyRef[]`) doesn't expose output text easily. Interactive mode uses `agent.run()` with `cliExtension` which handles I/O.
 - **Mock mode** (`MOCK_MODE=true`) returns canned JSON responses for all 19 capabilities — no USDC spent during development.
 
+## Lucid SDK Node.js Patch (2026-02-12)
+
+- **Problem**: `@lucid-agents/payments` v2.4.3 has a top-level `import { Database } from 'bun:sqlite'` (line 6 of dist/index.js). Since `@lucid-agents/core` and `@lucid-agents/hono` both import from `payments` transitively, the entire Lucid SDK crashes on Node.js with `ERR_UNSUPPORTED_ESM_URL_SCHEME` at module parse time.
+- **Root cause**: Build config bug in Lucid's `tsup` setup — SQLite storage should use a dynamic import. The SDK already has in-memory and Postgres storage backends that are pure JS and Node-compatible, but the static `bun:sqlite` import crashes before any storage config code runs.
+- **Fix**: `patch-package` replaces the static import with a lazy conditional: `if (typeof Bun !== 'undefined') { Database = (await import('bun:sqlite')).Database }`. Patch file: `patches/@lucid-agents+payments+2.4.3.patch`. Auto-applied via `postinstall` script.
+- **Consequence**: On Node.js, `SQLitePaymentStorage` will fail at runtime (the existing Bun check in the constructor still throws). You **must** configure payments with `storage: { type: 'in-memory' }` or `storage: { type: 'postgres' }` — never rely on the default.
+- **When to remove**: When Lucid ships a Node-compatible build (check their changelog for `bun:sqlite` → dynamic import). Pin `@lucid-agents/payments` version in package.json if you want to avoid the patch breaking on a minor update.
+- **Upstream**: Consider filing a GitHub issue at https://github.com/daydreamsai/lucid-agents/issues
+
 ## Gotchas
 
 - **zod v3 vs v4**: Daydreams v0.3.22 uses zod v4 (installed as `zod@4.1.5` in its own node_modules). Our project has zod v3.25.x. The `ZodObject` types are structurally incompatible. Fix: cast with `as any` for all schema params passed to `context()` and `action()`. Also cast handler params with `as any` and destructure manually.

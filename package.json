@@ -5,6 +5,7 @@
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
+    "postinstall": "patch-package",
     "start": "tsx src/index.ts",
     "serve": "tsx src/server.ts",
     "typecheck": "tsc --noEmit"
@@ -28,6 +29,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "patch-package": "^8.0.1",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
   }

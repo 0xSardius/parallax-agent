@@ -1,0 +1,19 @@
+diff --git a/node_modules/@lucid-agents/payments/dist/index.js b/node_modules/@lucid-agents/payments/dist/index.js
+index b8904a9..aaa6031 100644
+--- a/node_modules/@lucid-agents/payments/dist/index.js
++++ b/node_modules/@lucid-agents/payments/dist/index.js
+@@ -3,7 +3,13 @@ import { x402Client, wrapFetchWithPayment } from '@x402/fetch';
+ import { toClientEvmSigner, ExactEvmScheme } from '@x402/evm';
+ import { mkdirSync, readFileSync } from 'fs';
+ import { dirname, join } from 'path';
+-import { Database } from 'bun:sqlite';
++// PATCHED: Defer bun:sqlite import so Node.js doesn't crash at parse time.
++// SQLitePaymentStorage still checks for Bun at runtime and throws a clear error.
++// Use storage: { type: 'in-memory' } or { type: 'postgres' } on Node.js.
++let Database;
++if (typeof Bun !== 'undefined') {
++  try { ({ Database } = await import('bun:sqlite')); } catch {}
++}
+ import { Pool } from 'pg';
+ import Stripe from 'stripe';
+ import { ai } from '@ax-llm/ax';

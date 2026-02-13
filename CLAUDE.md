@@ -26,19 +26,16 @@ This is NOT an x402 endpoint — it is the aggregation/orchestration layer that 
 7. **Drafted `src/server.ts`** — Plain Hono server with Lucid-compatible routes (see blocker below)
 8. **TypeScript compiles clean** — `npx tsc --noEmit` passes
 
-### Blocker: Lucid SDK is Bun-only
-`@lucid-agents/payments` has a **top-level `import { Database } from 'bun:sqlite'`** in its dist bundle. Both `@lucid-agents/core` and `@lucid-agents/hono` depend on it transitively, so the entire Lucid SDK crashes on Node.js with `ERR_UNSUPPORTED_ESM_URL_SCHEME`.
+### Blocker: Lucid SDK bun:sqlite — RESOLVED via patch-package
+`@lucid-agents/payments` v2.4.3 has a top-level `import { Database } from 'bun:sqlite'` that crashes Node.js. We applied a `patch-package` fix that defers the import behind a `typeof Bun` check. Patch file: `patches/@lucid-agents+payments+2.4.3.patch`, auto-applied via `postinstall` script.
 
-**Consequence:** We cannot use `createAgent()` / `createAgentApp()` from Lucid on Node.js. The current `src/server.ts` uses plain Hono instead, implementing the same routes and agent card format manually.
+**Important:** When using `payments()` on Node.js, you **must** pass `storage: { type: 'in-memory' }` or `storage: { type: 'postgres' }`. The default SQLite storage only works on Bun. See `SCRATCHPAD.md` for full details.
 
-**Options to evaluate next session:**
-- **Option A:** Keep plain Hono server (current approach). Matches Lucid's route pattern, easy to swap in real SDK later. Works on Node.js + Railway today.
-- **Option B:** Switch runtime to Bun. Lucid SDK works natively, but requires changing all tooling and Railway config.
-- **Option C:** Wait for Lucid to ship a Node-compatible build, keep the packages installed but unused.
+**To remove the patch:** When Lucid ships a Node-compatible build, delete `patches/` dir and the `postinstall` script.
 
 ### What's left to finish
 - **Runtime test `src/server.ts`** — Start server, curl `/health`, `/entrypoints`, `/.well-known/agent-card.json`
-- **Decide on Lucid blocker** — Pick option A/B/C above
+- **Wire server to use real Lucid SDK** — Now that the patch unblocks imports, migrate `src/server.ts` from plain Hono to `createAgent()` / `createAgentApp()`
 - **Update `.env.example`** — Add `PORT`, `AGENT_URL` vars
 - **Update this CLAUDE.md** — Clean up architecture diagram, remove stale Daydreams references
 - **Commit the server** once it's tested and working
