@@ -6,8 +6,8 @@
   "main": "src/index.ts",
   "scripts": {
     "postinstall": "patch-package",
-    "start": "tsx src/index.ts",
-    "serve": "tsx src/server.ts",
+    "start": "tsx src/server.ts",
+    "cli": "tsx src/index.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -24,13 +24,16 @@
     "@x402/fetch": "^2.3.0",
     "ai": "^5.0.30",
     "dotenv": "^16.4.7",
+    "patch-package": "^8.0.1",
+    "tsx": "^4.19.0",
     "viem": "^2.23.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
-    "patch-package": "^8.0.1",
-    "tsx": "^4.19.0",
     "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   }
 }
