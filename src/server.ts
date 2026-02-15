@@ -10,8 +10,9 @@ import { runPipeline } from "./pipeline.js";
 import { logInfo } from "./utils/logger.js";
 
 const PORT = parseInt(process.env.PORT || "3000", 10);
-// Revenue wallet — incoming x402 payments land here
-const REVENUE_WALLET = "0xA45284183b5d95f85bdB128E59D448F6762B44B3" as const;
+// CDP Server Wallet — receives incoming x402 payments and pays outgoing endpoint calls.
+// Self-funding: revenue covers operating costs, margin accumulates. Sweep profits periodically.
+const AGENT_WALLET = "0x13bE67822Ea3B51bFa477A6b73DFc2C25D12359A" as const;
 
 // --- Build Lucid agent ---
 const runtime = await createAgent({
@@ -25,7 +26,7 @@ const runtime = await createAgent({
   .use(
     payments({
       config: {
-        payTo: REVENUE_WALLET,
+        payTo: AGENT_WALLET,
         network: "eip155:8453",
         facilitatorUrl:
           process.env.FACILITATOR_URL ||
