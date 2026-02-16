@@ -8,6 +8,7 @@
     "reliability": 0.9,
     "description": "Top cryptocurrencies ranked by market cap with price data",
     "defaultParams": { "chain": "base" },
+    "paramHints": "chain (default: base). Returns top tokens by market cap — no token-specific filtering.",
     "tier": "standard"
   },
   {
@@ -19,6 +20,7 @@
     "reliability": 0.9,
     "description": "Monitor whale buys, sells, and transfers for any token",
     "defaultParams": { "chain": "base" },
+    "paramHints": "chain (default: base), symbol (token ticker e.g. 'AERO')",
     "tier": "standard"
   },
   {
@@ -30,6 +32,7 @@
     "reliability": 0.9,
     "description": "Token security audit: honeypot detection, tax analysis, ownership risks",
     "defaultParams": { "chain": "base" },
+    "paramHints": "chain (default: base), symbol (token ticker e.g. 'AERO')",
     "tier": "standard"
   },
   {
@@ -41,6 +44,7 @@
     "reliability": 0.85,
     "description": "RSI, MACD, Bollinger Bands technical analysis for tokens",
     "defaultParams": { "chain": "base" },
+    "paramHints": "chain (default: base), symbol (token ticker e.g. 'AERO')",
     "tier": "standard"
   },
   {
@@ -52,6 +56,7 @@
     "reliability": 0.9,
     "description": "Trending tokens and pools by volume and activity on a specific chain",
     "defaultParams": { "chain": "base" },
+    "paramHints": "chain (default: base). Returns trending tokens — no token-specific filtering.",
     "tier": "standard"
   },
   {
@@ -63,6 +68,7 @@
     "reliability": 0.9,
     "description": "Top yielding pools on Base DEXes",
     "defaultParams": { "chain": "base" },
+    "paramHints": "chain (default: base). Returns top pools — no token-specific filtering.",
     "tier": "standard"
   },
   {
@@ -74,6 +80,7 @@
     "reliability": 0.9,
     "description": "Base DEX ecosystem: volume, TVL, gas stats, top pairs",
     "defaultParams": { "chain": "base" },
+    "paramHints": "chain (default: base). Returns overall DEX metrics — no token-specific filtering.",
     "tier": "standard"
   },
   {
@@ -85,6 +92,7 @@
     "reliability": 0.85,
     "description": "DeFi yield opportunities on Base",
     "defaultParams": { "chain": "base" },
+    "paramHints": "chain (default: base). Returns top yield opportunities — no token-specific filtering.",
     "tier": "standard"
   },
   {
@@ -95,7 +103,8 @@
     "costPerCall": 0.03,
     "reliability": 0.85,
     "description": "Latest 10 crypto news headlines by category (ai, base, bitcoin, crypto, defi, ethereum, macro, solana)",
-    "defaultParams": { "category": "base" },
+    "defaultParams": { "categories": "base" },
+    "paramHints": "categories (optional: 'ai', 'base', 'bitcoin', 'crypto', 'defi', 'ethereum', 'macro', 'solana'. Default: 'base')",
     "tier": "standard"
   },
   {
@@ -106,7 +115,8 @@
     "costPerCall": 0.10,
     "reliability": 0.85,
     "description": "12-24 hour news recap and sentiment summary by category",
-    "defaultParams": { "category": "base" },
+    "defaultParams": { "categories": "base" },
+    "paramHints": "categories (optional: 'ai', 'base', 'bitcoin', 'crypto', 'defi', 'ethereum', 'macro', 'solana'. Default: 'base')",
     "tier": "premium"
   },
   {
@@ -117,6 +127,7 @@
     "costPerCall": 0.031,
     "reliability": 0.85,
     "description": "24-hour token activity summary with key events and price context",
+    "paramHints": "ticker (required: token symbol e.g. 'AERO', 'ETH', 'BTC')",
     "tier": "standard"
   },
   {
@@ -127,6 +138,8 @@
     "costPerCall": 0.001,
     "reliability": 0.9,
     "description": "Search Farcaster casts by keyword for social sentiment and community discussion",
+    "queryParamName": "q",
+    "paramHints": "q (required: search keyword e.g. 'AERO' or 'Base')",
     "tier": "standard"
   },
   {
@@ -137,16 +150,20 @@
     "costPerCall": 0.001,
     "reliability": 0.9,
     "description": "Search Farcaster users and profiles for community analysis",
+    "queryParamName": "q",
+    "paramHints": "q (required: search keyword e.g. 'vitalik' or 'aerodrome')",
     "tier": "standard"
   },
   {
     "id": "neynar-feed",
     "name": "Neynar — Feed",
     "url": "https://api.neynar.com/v2/farcaster/feed",
-    "capabilities": ["social_data", "community_sentiment"],
+    "capabilities": ["farcaster_feed"],
     "costPerCall": 0.001,
     "reliability": 0.9,
-    "description": "Fetch Farcaster feeds for real-time social activity and sentiment",
+    "description": "Fetch a specific Farcaster user's feed by FID. Requires a known Farcaster user ID — not for general search",
+    "defaultParams": { "feed_type": "following", "limit": "25" },
+    "paramHints": "fid (required: Farcaster user ID number). Only use if you know a specific user's FID.",
     "tier": "standard"
   },
   {
@@ -157,6 +174,8 @@
     "costPerCall": 0.001,
     "reliability": 0.9,
     "description": "Search Farcaster channels for community and topic analysis",
+    "queryParamName": "q",
+    "paramHints": "q (required: search keyword e.g. 'defi' or 'base')",
     "tier": "standard"
   },
   {
@@ -166,7 +185,8 @@
     "capabilities": ["token_search"],
     "costPerCall": 0.001,
     "reliability": 0.85,
-    "description": "Search for token by name or symbol across multiple chains",
+    "description": "Search for token by name or symbol across multiple chains. Use first to resolve token addresses for other Elsa endpoints.",
+    "paramHints": "symbol_or_address (required: token symbol like 'AERO' or 0x address)",
     "method": "POST",
     "tier": "standard"
   },
@@ -174,10 +194,11 @@
     "id": "elsa-token-price",
     "name": "Elsa x402 — Token Price",
     "url": "https://x402-api.heyelsa.ai/api/get_token_price",
-    "capabilities": ["token_price", "token_analysis"],
+    "capabilities": ["token_price"],
     "costPerCall": 0.002,
     "reliability": 0.85,
-    "description": "Get token price with best-price discovery across 20+ DEX protocols",
+    "description": "Get token price with best-price discovery across 20+ DEX protocols. Requires chain and token_address.",
+    "paramHints": "chain (required: 'base', 'ethereum', etc.), token_address (required: 0x contract address)",
     "method": "POST",
     "tier": "standard"
   },
@@ -189,6 +210,7 @@
     "costPerCall": 0.02,
     "reliability": 0.85,
     "description": "Deep wallet analysis: holdings, PnL, risk scoring, diversification",
+    "paramHints": "address (required: 0x wallet address), chain (required: 'base', 'ethereum', etc.)",
     "method": "POST",
     "tier": "premium"
   },
@@ -200,6 +222,7 @@
     "costPerCall": 0.02,
     "reliability": 0.85,
     "description": "AI-powered yield farming recommendations based on risk profile",
+    "paramHints": "wallet_address (required: 0x wallet address), chain (optional: 'base', 'ethereum', etc.), risk_level (optional: 'low', 'medium', 'high')",
     "method": "POST",
     "tier": "standard"
   },
@@ -211,6 +234,7 @@
     "costPerCall": 0.001,
     "reliability": 0.85,
     "description": "Current gas prices across supported networks",
+    "paramHints": "chain (optional: 'base', 'ethereum', etc.). No other params needed.",
     "method": "POST",
     "tier": "standard"
   },
@@ -222,6 +246,7 @@
     "costPerCall": 0.01,
     "reliability": 0.85,
     "description": "Multi-chain portfolio overview with balances and positions across 15+ chains",
+    "paramHints": "address (required: 0x wallet address), chain (optional: 'base', 'ethereum', etc.)",
     "method": "POST",
     "tier": "standard"
   },
@@ -233,6 +258,7 @@
     "costPerCall": 0.01,
     "reliability": 0.8,
     "description": "Search the web and get LLM-ready markdown content. Use for breaking news, governance proposals, or data not covered by other endpoints",
+    "paramHints": "query (required: search query string)",
     "method": "POST",
     "tier": "premium"
   },

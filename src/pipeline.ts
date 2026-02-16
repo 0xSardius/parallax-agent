@@ -6,7 +6,7 @@ import {
   type CostEntry,
   type QueryTier,
 } from "./agent/types.js";
-import { getAllCapabilities, findByCapability } from "./agent/contexts/registry.js";
+import { getCapabilityDetails, findByCapability } from "./agent/contexts/registry.js";
 import { callEndpoint } from "./endpoints/client.js";
 import { buildDecompositionPrompt } from "./prompts/decompose.js";
 import { buildSynthesisPrompt } from "./prompts/synthesize.js";
@@ -35,8 +35,8 @@ export async function runPipeline(
 
   // --- Step 1: Decompose query ---
   logInfo("=== Step 1: Query Decomposition ===");
-  const capabilities = getAllCapabilities(tier);
-  const decompositionPrompt = buildDecompositionPrompt(query, capabilities);
+  const capabilityDetails = getCapabilityDetails(tier);
+  const decompositionPrompt = buildDecompositionPrompt(query, capabilityDetails);
 
   const decompositionResult = await generateText({
     model: anthropic("claude-sonnet-4-5-20250929"),
@@ -45,7 +45,9 @@ export async function runPipeline(
     temperature: 0.3,
   });
 
-  const rawDecomp = decompositionResult.text.trim();
+  let rawDecomp = decompositionResult.text.trim();
+  // Strip markdown code fences if LLM wraps JSON in ```json ... ```
+  rawDecomp = rawDecomp.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "");
   const decomposition = DecompositionResultSchema.parse(JSON.parse(rawDecomp));
 
   costEntries.push({
@@ -85,9 +87,11 @@ export async function runPipeline(
     }
 
     logInfo(`Calling ${endpoint.name} for: ${subTask.task}`);
-    const result = await callEndpoint(endpoint, subTask.requiredCapability, {
-      query: subTask.task,
-    });
+    const result = await callEndpoint(
+      endpoint,
+      subTask.requiredCapability,
+      subTask.params ?? {}
+    );
     endpointResults.push(result);
 
     if (result.costUsd > 0) {

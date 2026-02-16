@@ -27,6 +27,34 @@ export function getAllCapabilities(tier: QueryTier = "standard"): string[] {
   return Array.from(caps);
 }
 
+export interface CapabilityInfo {
+  capability: string;
+  endpointName: string;
+  description: string;
+  paramHints?: string;
+  costPerCall: number;
+}
+
+export function getCapabilityDetails(tier: QueryTier = "standard"): CapabilityInfo[] {
+  const seen = new Set<string>();
+  const details: CapabilityInfo[] = [];
+  for (const ep of getEndpointsForTier(tier)) {
+    for (const cap of ep.capabilities) {
+      if (!seen.has(cap)) {
+        seen.add(cap);
+        details.push({
+          capability: cap,
+          endpointName: ep.name,
+          description: ep.description,
+          paramHints: ep.paramHints,
+          costPerCall: ep.costPerCall,
+        });
+      }
+    }
+  }
+  return details;
+}
+
 export function findByCapability(
   capability: string,
   tier: QueryTier = "standard"

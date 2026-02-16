@@ -11,6 +11,8 @@ export const X402EndpointSchema = z.object({
   reliability: z.number().min(0).max(1),
   description: z.string(),
   defaultParams: z.record(z.string(), z.string()).optional(),
+  queryParamName: z.string().optional(), // Param name for the dynamic query value (default: "query")
+  paramHints: z.string().optional(), // Human-readable param guidance for LLM decomposer
   method: z.enum(["GET", "POST"]).optional(),
   tier: z.enum(["standard", "premium"]).default("standard"),
 });
@@ -25,6 +27,7 @@ export const SubTaskSchema = z.object({
   task: z.string(),
   requiredCapability: z.string(),
   priority: z.number().int().min(1).max(5),
+  params: z.record(z.string(), z.string()).optional(),
 });
 
 export type SubTask = z.infer<typeof SubTaskSchema>;

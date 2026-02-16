@@ -167,6 +167,11 @@ export async function callEndpoint(
 
     const url = new URL(endpoint.url);
     const mergedParams = { ...endpoint.defaultParams, ...params };
+    // Rename "query" param to endpoint-specific name (e.g. Neynar uses "q")
+    if (endpoint.queryParamName && endpoint.queryParamName !== "query" && "query" in mergedParams) {
+      mergedParams[endpoint.queryParamName] = mergedParams["query"];
+      delete mergedParams["query"];
+    }
     const method = endpoint.method ?? "GET";
 
     let response: Response;
