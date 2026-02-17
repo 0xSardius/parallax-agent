@@ -6,8 +6,14 @@ import { payments } from "@lucid-agents/payments";
 import { a2a } from "@lucid-agents/a2a";
 import { createAgentApp } from "@lucid-agents/hono";
 import { serve } from "@hono/node-server";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { runPipeline } from "./pipeline.js";
 import { logInfo } from "./utils/logger.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const PORT = parseInt(process.env.PORT || "3000", 10);
 // CDP Server Wallet — receives incoming x402 payments and pays outgoing endpoint calls.
@@ -119,6 +125,14 @@ addEntrypoint({
   },
 });
 
+// --- Static assets ---
+const logoBuffer = readFileSync(join(__dirname, "../public/logo.png"));
+app.get("/logo.png", (c) => {
+  return new Response(logoBuffer, {
+    headers: { "Content-Type": "image/png", "Cache-Control": "public, max-age=86400" },
+  });
+});
+
 // --- ERC-8004 registration metadata ---
 const AGENT_URL =
   process.env.AGENT_URL || `http://localhost:${PORT}`;
@@ -129,6 +143,7 @@ app.get("/.well-known/agent-registration.json", (c) =>
     name: "Parallax",
     description:
       "x402 intelligence orchestration agent. Chains multiple x402-paid DeFi and market data endpoints into compound intelligence reports. Standard reports $0.25 USDC, premium deep analysis $3.00 USDC. Pays and receives on Base.",
+    image: `${AGENT_URL}/logo.png`,
     active: true,
     x402Support: true,
     services: [

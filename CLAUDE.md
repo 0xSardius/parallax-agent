@@ -25,24 +25,44 @@ Parallax is both a **consumer** (pays other x402 endpoints for data) and a **pro
 - **ERC-8004:** Registered on Base mainnet ([tx](https://basescan.org/tx/0xd3b2a333c4dcb7ffad254f4e22bf4d02d41da35b01aa98179daf236dfd9daa1f))
 - **xgate:** Indexed automatically from ERC-8004 registry + agent card crawling
 
-### Live-tested (2025-02-15)
-- Ran real query "What are the top trending tokens on Base right now?" with `MOCK_MODE=false`
-- 3/4 x402 endpoints succeeded (Silverback trending, top-coins, dex-metrics), 1 failed (Neynar param format issue)
-- Total cost: $0.016 (x402: $0.005, LLM: $0.011)
-- Full report generated with confidence scoring, data gaps, and risk analysis
+### Live-tested (2026-02-16)
+- AERO investment query: 5/6 endpoints succeeded, real Farcaster social data, protocol revenue analysis. Cost: $0.083
+- Yield opportunities query: 3/4 succeeded, specific pool recommendations with APRs and sustainability scores. Cost: $0.054
+- Farcaster community query: 2/3 succeeded after Neynar param fix. Cost: $0.014
+- Reports include confidence scoring (15-75/100), data gaps, and risk analysis
 
 ### Wallet Balances
 - **CDP Wallet:** `0x13bE67822Ea3B51bFa477A6b73DFc2C25D12359A` — ~$7.98 USDC + ~$2 ETH (for gas)
 - **Self-funding model:** Incoming x402 payments go to CDP wallet, same wallet pays outgoing endpoint calls. Margin accumulates. Sweep profits periodically via CDP SDK.
 - Check balance: `npx tsx src/check-balance.ts`
 
-### What's Next
-- **Fix Neynar endpoint** — Needs `q` query param instead of body JSON. Update `client.ts` or registry `defaultParams`
-- **Prompt iteration** — Test decomposition and synthesis prompts with varied queries, tune for quality
-- **Memory integration** — Wire memory into the pipeline (save query results, update endpoint reliability)
-- **Error edge cases** — Test: all endpoints fail, no matching endpoints, LLM returns malformed JSON
-- **Profit sweep script** — Write a script to transfer excess USDC from CDP wallet to personal wallet
-- **Phase 2: Chat UI** — Next.js frontend with wallet connection and streaming reports
+### What's Done This Session
+- **Fixed Neynar endpoints** — Added `queryParamName: "q"`, fixed Feed capability to `farcaster_feed`
+- **Fixed Gloria News** — param name `categories` (plural), not `category`
+- **Prompt iteration** — Decomposer now outputs structured params per sub-task with `paramHints` from registry
+- **Code fence stripping** — Pipeline handles LLM wrapping JSON in ` ```json ``` `
+- **ERC-8004 metadata** — Added `/.well-known/agent-registration.json` with full spec compliance (type, services, registrations). Updated on-chain URI via `setAgentURI` ([tx](https://basescan.org/tx/0x3103f612e5741ea97d079a5940e543197a42a4d9215cb598b39639da2be9301f))
+- **Logo** — Added at `/logo.png`, wired into ERC-8004 `image` field
+- **Zapper endpoints** — Added 17 new live endpoints ($0.001-0.004 each)
+
+### What's Next (prioritized)
+
+**High impact:**
+1. **Parallel endpoint execution** — Currently sequential (~40s). Parallel would cut to ~10s. Major UX win.
+2. **Chat UI (Phase 2)** — Next.js frontend opens Parallax to humans, not just agents
+3. **More prompt tuning** — Run 5+ diverse queries, tune decomposition + synthesis for quality
+
+**Medium impact:**
+4. **Streaming responses** — Return partial results as they arrive (better for Chat UI)
+5. **Postgres payment storage** — Replace in-memory storage so payment history survives restarts
+6. **Memory integration** — Save query results, track endpoint reliability over time
+7. **Farcaster/Telegram bot** — Lower friction entry point for users
+8. **Profit sweep script** — Transfer excess USDC from CDP wallet to personal wallet
+
+**Lower priority:**
+9. **TEE migration** — Deploy to Phala Network for TEE badge on 8004scan. Trust signal, not blocking.
+10. **IPFS-pinned metadata** — Content-addressed agentURI. Minor trust bump.
+11. **Error edge cases** — Test: all endpoints fail, no matching endpoints, malformed LLM output
 
 ## Build Progress
 
@@ -98,7 +118,7 @@ src/
 │   └── contexts/
 │       └── registry.ts           # Endpoint registry — load, search by capability (pure functions)
 ├── endpoints/
-│   ├── registry.json             # 11 live x402 endpoints (Silverback DeFi + Gloria AI)
+│   ├── registry.json             # 40 live x402 endpoints (Zapper, Silverback, Neynar, Elsa, Gloria, Firecrawl, Einstein)
 │   └── client.ts                 # x402 HTTP client (mock mode, CDP wallet, timeouts)
 ├── prompts/
 │   ├── decompose.ts              # Decomposition prompt template
@@ -113,10 +133,12 @@ createAgent() → .use(http()) → .use(payments()) → .use(a2a()) → .build()
 → createAgentApp(runtime) → addEntrypoint() → serve()
 ```
 
-Auto-generated routes:
+Routes:
 - `GET /health` — `{ ok: true, version }`
 - `GET /entrypoints` — List skills with streaming info
-- `GET /.well-known/agent.json` / `agent-card.json` — Full A2A agent card
+- `GET /.well-known/agent.json` / `agent-card.json` — Full A2A agent card (auto-generated by Lucid)
+- `GET /.well-known/agent-registration.json` — ERC-8004 registration metadata
+- `GET /logo.png` — Agent logo (512x512 PNG)
 - `POST /entrypoints/:key/invoke` — x402-gated invoke (returns 402 without payment)
 
 **Core loop:** Query -> Decompose into sub-tasks -> Match to x402 endpoints -> Execute calls (sequential) -> LLM synthesizes report -> Return report + cost summary
@@ -252,27 +274,42 @@ const response = await fetchWithPayment(endpoint.url);
 ## ERC-8004 On-Chain Identity
 
 - **Registry**: `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432` (Base mainnet)
+- **Agent ID**: 17653
 - **Registration tx**: [0xd3b2a3...](https://basescan.org/tx/0xd3b2a333c4dcb7ffad254f4e22bf4d02d41da35b01aa98179daf236dfd9daa1f)
-- **Agent URI**: `https://parallax-agent-production.up.railway.app/.well-known/agent-card.json`
+- **Agent URI**: `https://parallax-agent-production.up.railway.app/.well-known/agent-registration.json`
+- **URI update tx**: [0x3103f6...](https://basescan.org/tx/0x3103f612e5741ea97d079a5940e543197a42a4d9215cb598b39639da2be9301f)
+- **8004scan**: https://www.8004scan.io/agents/base/17653
 - **Agent wallet**: `0x13bE67822Ea3B51bFa477A6b73DFc2C25D12359A` (auto-set to msg.sender on register)
-- **Re-register**: `npx tsx src/register-8004.ts` (mints new agent NFT — only if needed)
+- **Register new agent**: `npx tsx src/register-8004.ts`
+- **Update URI**: `npx tsx src/register-8004.ts update-uri`
 
-## Live x402 Endpoints
+## Live x402 Endpoints (40 total in registry)
 
-Registry with verified live endpoints (all return 402 Payment Required):
+**Zapper** (`public.zapper.xyz`) — 17 endpoints, $0.001-0.005 each:
+- token-price, token-holders, token-balances, token-ranking, token-activity-feed
+- portfolio-totals, defi-balances, nft-balances, nft-ranking, nft-collection-metadata, nft-token-metadata
+- search, account-identity, historical-token-price, transaction-history, transaction-details
+- general-swap-feed
 
 **Silverback DeFi** (`x402.silverbackdefi.app`) — 8 endpoints:
 - top-coins ($0.001), trending-tokens ($0.001), top-pools ($0.001), dex-metrics ($0.002)
 - whale-moves ($0.01), token-audit ($0.01), technical-analysis ($0.02), defi-yield ($0.02)
 
+**Neynar** (`api.neynar.com`) — 4 endpoints, $0.001 each:
+- cast-search, user-search, channel-search, feed (requires FID)
+
+**Elsa x402** (`x402-api.heyelsa.ai`) — 6 endpoints:
+- search-token ($0.001), token-price ($0.002), gas-prices ($0.001)
+- portfolio ($0.01), analyze-wallet ($0.02), yield-suggestions ($0.02)
+
 **Gloria AI** (`api.itsgloria.ai`) — 3 endpoints:
 - news ($0.03), recaps ($0.10), news-ticker-summary ($0.031)
 
-**Other confirmed live endpoints** (not yet in registry, potential additions):
-- Zapper (`public.zapper.xyz`) — 14 endpoints (token prices, holders, portfolio, transactions)
-- Elsa x402 (`x402-api.heyelsa.ai`) — 18 endpoints (DeFi trading, portfolio, yield)
-- Neynar (`api.neynar.com`) — Farcaster social data via x402
-- Firecrawl (`api.firecrawl.dev`) — web scraping
+**Firecrawl** (`api.firecrawl.dev`) — 1 endpoint (currently returning 401, may be temporarily down):
+- search ($0.01)
+
+**Einstein AI** (`emc2ai.io`) — 2 endpoints (premium, expensive):
+- latest-pairs ($0.25), smart-money-leaderboard ($0.85)
 
 ## Lucid SDK Reference
 
@@ -300,13 +337,15 @@ Registry with verified live endpoints (all return 402 Payment Required):
 
 ## Known Issues / Tech Debt
 
-- **Neynar endpoint param format**: Neynar Cast Search expects `q` as a query param, not in the request body. Returned HTTP 400 during live test. Fix in `client.ts` or update `defaultParams` in registry.
+- **Sequential endpoint execution**: Sub-tasks execute one at a time (~40s per query). Parallel execution would cut to ~10s. High-priority optimization.
 - **Memory not wired into pipeline**: Need to add save-query-result and update-endpoint-reliability calls.
 - **LLM cost estimates are hardcoded**: `$0.003` for decomposition, `$0.008` for synthesis. Should use actual token counts from AI SDK response.
 - **Endpoint registry is static**: No runtime discovery. Phase 3 will add auto-discovery.
-- **CLI `$` escaping**: Use single quotes for queries with `$` symbols (e.g. `'Should I invest in $AERO?'`), otherwise the shell interprets `$AERO` as a variable.
-- **Wallet extension not wired**: `@lucid-agents/wallet` is installed but not used in server.ts. Current outgoing payments use CDP wallet via `src/endpoints/client.ts`.
+- **Firecrawl returning 401**: Their x402 endpoint is temporarily broken (should return 402). Keep in registry, will self-heal when they fix it.
+- **Silverback returns generic data for some queries**: Token-audit, whale-moves, technical-analysis endpoints accept `symbol` param but sometimes return general data. May need contract addresses instead of symbols.
+- **Zapper endpoints need contract addresses**: Most Zapper endpoints require `address` (token contract) + `chainId`, not ticker symbols. The decomposer should use `zapper-search` or `elsa-search-token` first to resolve.
 - **Payment storage is in-memory**: Payment tracking resets on server restart. Switch to Postgres for persistence when needed.
+- **CLI `$` escaping**: Use single quotes for queries with `$` symbols (e.g. `'Should I invest in $AERO?'`), otherwise the shell interprets `$AERO` as a variable.
 
 ## Relevant Skills
 
