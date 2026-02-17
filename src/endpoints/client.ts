@@ -95,9 +95,16 @@ const MOCK_RESPONSES: Record<string, unknown> = {
 };
 
 let paymentFetch: typeof fetch | null = null;
+let initPromise: Promise<typeof fetch> | null = null;
 
 async function initPaymentFetch(): Promise<typeof fetch> {
   if (paymentFetch) return paymentFetch;
+  if (initPromise) return initPromise; // Avoid parallel re-init
+  initPromise = doInit();
+  return initPromise;
+}
+
+async function doInit(): Promise<typeof fetch> {
 
   const client = new x402Client();
 

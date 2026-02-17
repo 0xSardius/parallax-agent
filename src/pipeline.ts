@@ -62,19 +62,18 @@ export async function runPipeline(
     logInfo(`  [P${st.priority}] ${st.requiredCapability}: ${st.task}`);
   }
 
-  // --- Step 2: Execute sub-tasks ---
-  logInfo("\n=== Step 2: Endpoint Execution ===");
+  // --- Step 2: Execute sub-tasks (parallel) ---
+  logInfo("\n=== Step 2: Endpoint Execution (parallel) ===");
   const sorted = [...decomposition.subTasks].sort(
     (a, b) => a.priority - b.priority
   );
-  const endpointResults: EndpointResult[] = [];
 
-  for (const subTask of sorted) {
+  const promises = sorted.map(async (subTask): Promise<EndpointResult> => {
     const endpoint = findByCapability(subTask.requiredCapability, tier);
 
     if (!endpoint) {
       logInfo(`No endpoint for: ${subTask.requiredCapability} — skipping`);
-      endpointResults.push({
+      return {
         endpointId: "none",
         endpointName: "No endpoint available",
         capability: subTask.requiredCapability,
@@ -82,22 +81,39 @@ export async function runPipeline(
         error: `No endpoint for capability: ${subTask.requiredCapability}`,
         latencyMs: 0,
         costUsd: 0,
-      });
-      continue;
+      };
     }
 
     logInfo(`Calling ${endpoint.name} for: ${subTask.task}`);
-    const result = await callEndpoint(
+    return callEndpoint(
       endpoint,
       subTask.requiredCapability,
       subTask.params ?? {}
     );
-    endpointResults.push(result);
+  });
 
+  const settled = await Promise.allSettled(promises);
+  const endpointResults: EndpointResult[] = settled.map((s, i) => {
+    if (s.status === "fulfilled") return s.value;
+    // Unexpected rejection — wrap as a failed result
+    const subTask = sorted[i];
+    logError(`Unexpected error for ${subTask.requiredCapability}: ${s.reason}`);
+    return {
+      endpointId: "none",
+      endpointName: "Unknown",
+      capability: subTask.requiredCapability,
+      success: false,
+      error: String(s.reason),
+      latencyMs: 0,
+      costUsd: 0,
+    };
+  });
+
+  for (const result of endpointResults) {
     if (result.costUsd > 0) {
       costEntries.push({
         type: "x402",
-        description: `${endpoint.name} (${subTask.requiredCapability})`,
+        description: `${result.endpointName} (${result.capability})`,
         costUsd: result.costUsd,
         timestamp: Date.now(),
       });
