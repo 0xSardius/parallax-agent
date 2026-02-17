@@ -119,6 +119,46 @@ addEntrypoint({
   },
 });
 
+// --- ERC-8004 registration metadata ---
+const AGENT_URL =
+  process.env.AGENT_URL || `http://localhost:${PORT}`;
+
+app.get("/.well-known/agent-registration.json", (c) =>
+  c.json({
+    type: "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+    name: "Parallax",
+    description:
+      "x402 intelligence orchestration agent. Chains multiple x402-paid DeFi and market data endpoints into compound intelligence reports. Standard reports $0.25 USDC, premium deep analysis $3.00 USDC. Pays and receives on Base.",
+    active: true,
+    x402Support: true,
+    services: [
+      {
+        name: "A2A",
+        endpoint: `${AGENT_URL}/.well-known/agent-card.json`,
+        version: "1.0.0",
+        a2aSkills: ["intelligence-report", "deep-intelligence-report"],
+      },
+      {
+        name: "web",
+        endpoint: AGENT_URL,
+      },
+      {
+        name: "agentWallet",
+        endpoint: `eip155:8453:${AGENT_WALLET}`,
+      },
+    ],
+    registrations: [
+      {
+        agentId: 17653,
+        agentRegistry:
+          "eip155:8453:0x8004a169fb4a3325136eb29fa0ceb6d2e539a432",
+      },
+    ],
+    supportedTrust: ["reputation"],
+    updatedAt: Math.floor(Date.now() / 1000),
+  })
+);
+
 // --- Start server ---
 logInfo("Parallax — x402 Intelligence Orchestration Agent (Lucid SDK)");
 logInfo(`Mock mode: ${process.env.MOCK_MODE === "true" ? "ON" : "OFF"}`);
