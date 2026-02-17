@@ -45,24 +45,49 @@ Parallax is both a **consumer** (pays other x402 endpoints for data) and a **pro
 - **Logo** — Added at `/logo.png`, wired into ERC-8004 `image` field
 - **Zapper endpoints** — Added 17 new live endpoints ($0.001-0.004 each)
 
-### What's Next (prioritized)
+### Next Session — Ready to Action
+
+**1. Parallel endpoint execution** (10 min, high impact)
+- One file: `src/pipeline.ts` — replace the sequential `for` loop with `Promise.allSettled`
+- Sub-tasks are already independent, no dependency chain
+- Expected: query time drops from ~40s to ~10s
+
+**2. Daydreams Router integration** (15 min, medium impact)
+- The Daydreams team suggested we use their inference router
+- It's an OpenAI-compatible proxy: pay for LLM calls with USDC via x402 instead of API keys
+- Replaces `ANTHROPIC_API_KEY` — does NOT touch the pipeline, prompts, or endpoint calls
+- Install `@daydreamsai/ai-sdk-provider`, change 2 lines in `pipeline.ts`:
+  ```typescript
+  // Before
+  import { anthropic } from "@ai-sdk/anthropic";
+  const model = anthropic("claude-sonnet-4-5-20250929");
+  // After
+  import { dreamsRouter } from "@daydreamsai/ai-sdk-provider";
+  const model = dreamsRouter("anthropic/claude-sonnet-4-5-20250929");
+  ```
+- Benefits: unified USDC billing (no API keys), provider fallback, model flexibility
+- Docs: https://docs.dreams.fun/docs/router
+- npm: `@daydreamsai/ai-sdk-provider`
+
+### Full Roadmap (prioritized)
 
 **High impact:**
-1. **Parallel endpoint execution** — Currently sequential (~40s). Parallel would cut to ~10s. Major UX win.
-2. **Chat UI (Phase 2)** — Next.js frontend opens Parallax to humans, not just agents
-3. **More prompt tuning** — Run 5+ diverse queries, tune decomposition + synthesis for quality
+1. **Parallel endpoint execution** — ~40s → ~10s query time
+2. **Daydreams Router** — USDC-native LLM calls, no API keys
+3. **Chat UI (Phase 2)** — Next.js frontend opens Parallax to humans
+4. **More prompt tuning** — Run 5+ diverse queries, tune decomposition + synthesis
 
 **Medium impact:**
-4. **Streaming responses** — Return partial results as they arrive (better for Chat UI)
-5. **Postgres payment storage** — Replace in-memory storage so payment history survives restarts
-6. **Memory integration** — Save query results, track endpoint reliability over time
-7. **Farcaster/Telegram bot** — Lower friction entry point for users
-8. **Profit sweep script** — Transfer excess USDC from CDP wallet to personal wallet
+5. **Streaming responses** — Return partial results as they arrive (better for Chat UI)
+6. **Postgres payment storage** — Replace in-memory storage so payment history survives restarts
+7. **Memory integration** — Save query results, track endpoint reliability over time
+8. **Farcaster/Telegram bot** — Lower friction entry point for users
+9. **Profit sweep script** — Transfer excess USDC from CDP wallet to personal wallet
 
 **Lower priority:**
-9. **TEE migration** — Deploy to Phala Network for TEE badge on 8004scan. Trust signal, not blocking.
-10. **IPFS-pinned metadata** — Content-addressed agentURI. Minor trust bump.
-11. **Error edge cases** — Test: all endpoints fail, no matching endpoints, malformed LLM output
+10. **TEE migration** — Deploy to Phala Network for TEE badge on 8004scan. Trust signal, not blocking.
+11. **IPFS-pinned metadata** — Content-addressed agentURI. Minor trust bump.
+12. **Error edge cases** — Test: all endpoints fail, no matching endpoints, malformed LLM output
 
 ## Build Progress
 
