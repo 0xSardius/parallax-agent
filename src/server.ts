@@ -144,6 +144,9 @@ app.get("/.well-known/agent-registration.json", (c) =>
     description:
       "x402 intelligence orchestration agent. Chains multiple x402-paid DeFi and market data endpoints into compound intelligence reports. Standard reports $0.25 USDC, premium deep analysis $3.00 USDC. Pays and receives on Base.",
     image: `${AGENT_URL}/logo.png`,
+    agentType: "orchestrator",
+    tags: ["defi", "intelligence", "x402", "base", "market-data", "analytics"],
+    categories: ["data-analysis", "defi", "research"],
     active: true,
     x402Support: true,
     services: [
