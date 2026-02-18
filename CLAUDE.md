@@ -377,6 +377,19 @@ All `public.zapper.xyz/x402/*` endpoints are set to `tier: "disabled"` in `regis
 
 Capabilities temporarily lost: NFT data, historical token prices, ENS/Farcaster identity resolution, human-readable transaction interpretation. Core DeFi intelligence capabilities remain fully covered.
 
+### Capability Gaps to Explore
+
+These are genuinely missing capabilities with no x402 provider available yet. Watch for new endpoints on xgate or build custom integrations.
+
+| Gap | Impact | Notes |
+|-----|--------|-------|
+| **Twitter/X sentiment** | High | Crypto Twitter is where most alpha/FUD originates. Only have Farcaster via Neynar. No x402 provider exists yet. |
+| **Protocol revenue/TVL tracking** | Medium | DefiLlama-style data. Silverback has DEX metrics but not protocol-level revenue, fees, or TVL history. |
+| **On-chain governance** | Medium | DAO proposals, votes, quorum status. Relevant for protocol health assessment. |
+| **Token holder distribution** | Medium | Holder counts, concentration metrics, Gini coefficient. Zapper had partial coverage. |
+| **Historical price data** | Low-Medium | Can't answer "how has X performed over 30 days?" Zapper had this. |
+| **NFT data** | Low | Collection stats, floor prices, holder analysis. Zapper had this. Not critical for DeFi intelligence. |
+
 ## LLM Cost Tracking
 
 Pipeline uses real token counts from `generateText().usage` to calculate costs:
