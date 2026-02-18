@@ -173,7 +173,17 @@ export async function callEndpoint(
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     const url = new URL(endpoint.url);
-    const mergedParams = { ...endpoint.defaultParams, ...params };
+    // Defensive merge: defaultParams provide fallbacks for any keys the LLM
+    // omits or sends as empty strings. LLM params win only when non-empty.
+    const cleanedParams: Record<string, unknown> = {};
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        if (v !== undefined && v !== null && v !== "") {
+          cleanedParams[k] = v;
+        }
+      }
+    }
+    const mergedParams = { ...endpoint.defaultParams, ...cleanedParams };
     // Rename "query" param to endpoint-specific name (e.g. Neynar uses "q")
     if (endpoint.queryParamName && endpoint.queryParamName !== "query" && "query" in mergedParams) {
       mergedParams[endpoint.queryParamName] = mergedParams["query"];
@@ -254,6 +264,11 @@ export async function callEndpoint(
           ? `Timeout after ${timeoutMs}ms`
           : error.message
         : String(error);
+
+    // Diagnostic: surface x402 payment flow errors (e.g. v1/v2 mismatch)
+    if (error instanceof Error && error.stack) {
+      logError(`x402 diagnostic [${endpoint.id}]: ${error.message}\n${error.stack.split("\n").slice(0, 4).join("\n")}`);
+    }
 
     logEndpointCall({
       endpointId: endpoint.id,

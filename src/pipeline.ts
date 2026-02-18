@@ -12,6 +12,26 @@ import { buildDecompositionPrompt } from "./prompts/decompose.js";
 import { buildSynthesisPrompt } from "./prompts/synthesize.js";
 import { logInfo, logError } from "./utils/logger.js";
 
+// Claude Sonnet 4.5 pricing (USD per token)
+const SONNET_INPUT_PRICE = 3.0 / 1_000_000;   // $3.00 / MTok
+const SONNET_OUTPUT_PRICE = 15.0 / 1_000_000;  // $15.00 / MTok
+const SONNET_CACHED_INPUT_PRICE = 0.3 / 1_000_000; // $0.30 / MTok
+
+function calculateLlmCost(usage: {
+  inputTokens?: number;
+  outputTokens?: number;
+  cachedInputTokens?: number;
+}): number {
+  const input = usage.inputTokens ?? 0;
+  const output = usage.outputTokens ?? 0;
+  const cached = usage.cachedInputTokens ?? 0;
+  return (
+    (input - cached) * SONNET_INPUT_PRICE +
+    cached * SONNET_CACHED_INPUT_PRICE +
+    output * SONNET_OUTPUT_PRICE
+  );
+}
+
 export interface PipelineResult {
   report: string;
   costEntries: CostEntry[];
@@ -50,10 +70,12 @@ export async function runPipeline(
   rawDecomp = rawDecomp.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "");
   const decomposition = DecompositionResultSchema.parse(JSON.parse(rawDecomp));
 
+  const decompCost = calculateLlmCost(decompositionResult.usage);
+  logInfo(`Decomposition tokens: ${decompositionResult.usage.inputTokens ?? 0}in / ${decompositionResult.usage.outputTokens ?? 0}out → $${decompCost.toFixed(4)}`);
   costEntries.push({
     type: "llm",
-    description: "Query decomposition (Claude Sonnet)",
-    costUsd: 0.003,
+    description: `Query decomposition (Claude Sonnet) [${decompositionResult.usage.inputTokens ?? 0}in/${decompositionResult.usage.outputTokens ?? 0}out]`,
+    costUsd: decompCost,
     timestamp: Date.now(),
   });
 
@@ -139,10 +161,12 @@ export async function runPipeline(
 
   const report = synthesisResult.text.trim();
 
+  const synthCost = calculateLlmCost(synthesisResult.usage);
+  logInfo(`Synthesis tokens: ${synthesisResult.usage.inputTokens ?? 0}in / ${synthesisResult.usage.outputTokens ?? 0}out → $${synthCost.toFixed(4)}`);
   costEntries.push({
     type: "llm",
-    description: "Report synthesis (Claude Sonnet)",
-    costUsd: 0.008,
+    description: `Report synthesis (Claude Sonnet) [${synthesisResult.usage.inputTokens ?? 0}in/${synthesisResult.usage.outputTokens ?? 0}out]`,
+    costUsd: synthCost,
     timestamp: Date.now(),
   });
 

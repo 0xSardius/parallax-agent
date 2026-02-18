@@ -104,7 +104,7 @@
     "reliability": 0.85,
     "description": "Latest 10 crypto news headlines by category (ai, base, bitcoin, crypto, defi, ethereum, macro, solana)",
     "defaultParams": { "categories": "base" },
-    "paramHints": "categories (optional: 'ai', 'base', 'bitcoin', 'crypto', 'defi', 'ethereum', 'macro', 'solana'. Default: 'base')",
+    "paramHints": "categories (required, one of: 'ai', 'base', 'bitcoin', 'crypto', 'defi', 'ethereum', 'macro', 'solana'. Use 'base' unless the query targets a specific category)",
     "tier": "standard"
   },
   {
@@ -116,7 +116,7 @@
     "reliability": 0.85,
     "description": "12-24 hour news recap and sentiment summary by category",
     "defaultParams": { "categories": "base" },
-    "paramHints": "categories (optional: 'ai', 'base', 'bitcoin', 'crypto', 'defi', 'ethereum', 'macro', 'solana'. Default: 'base')",
+    "paramHints": "categories (required, one of: 'ai', 'base', 'bitcoin', 'crypto', 'defi', 'ethereum', 'macro', 'solana'. Use 'base' unless the query targets a specific category)",
     "tier": "premium"
   },
   {
