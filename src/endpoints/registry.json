@@ -3,11 +3,16 @@
     "id": "silverback-top-coins",
     "name": "Silverback DeFi — Top Coins",
     "url": "https://x402.silverbackdefi.app/api/v1/top-coins",
-    "capabilities": ["token_analysis", "market_data"],
+    "capabilities": [
+      "token_analysis",
+      "market_data"
+    ],
     "costPerCall": 0.001,
     "reliability": 0.9,
     "description": "Top cryptocurrencies ranked by market cap with price data",
-    "defaultParams": { "chain": "base" },
+    "defaultParams": {
+      "chain": "base"
+    },
     "paramHints": "chain (default: base). Returns top tokens by market cap — no token-specific filtering.",
     "tier": "standard"
   },
@@ -15,11 +20,16 @@
     "id": "silverback-whale-moves",
     "name": "Silverback DeFi — Whale Moves",
     "url": "https://x402.silverbackdefi.app/api/v1/whale-moves",
-    "capabilities": ["whale_tracking", "smart_money"],
+    "capabilities": [
+      "whale_tracking",
+      "smart_money"
+    ],
     "costPerCall": 0.01,
     "reliability": 0.9,
     "description": "Monitor whale buys, sells, and transfers for any token",
-    "defaultParams": { "chain": "base" },
+    "defaultParams": {
+      "chain": "base"
+    },
     "paramHints": "chain (default: base), symbol (token ticker e.g. 'AERO')",
     "tier": "standard"
   },
@@ -27,11 +37,16 @@
     "id": "silverback-token-audit",
     "name": "Silverback DeFi — Token Audit",
     "url": "https://x402.silverbackdefi.app/api/v1/token-audit",
-    "capabilities": ["risk_intelligence", "token_security"],
+    "capabilities": [
+      "risk_intelligence",
+      "token_security"
+    ],
     "costPerCall": 0.01,
     "reliability": 0.9,
     "description": "Token security audit: honeypot detection, tax analysis, ownership risks",
-    "defaultParams": { "chain": "base" },
+    "defaultParams": {
+      "chain": "base"
+    },
     "paramHints": "chain (default: base), symbol (token ticker e.g. 'AERO')",
     "tier": "standard"
   },
@@ -39,11 +54,16 @@
     "id": "silverback-technical",
     "name": "Silverback DeFi — Technical Analysis",
     "url": "https://x402.silverbackdefi.app/api/v1/technical-analysis",
-    "capabilities": ["technical_analysis", "market_risk"],
+    "capabilities": [
+      "technical_analysis",
+      "market_risk"
+    ],
     "costPerCall": 0.02,
     "reliability": 0.85,
     "description": "RSI, MACD, Bollinger Bands technical analysis for tokens",
-    "defaultParams": { "chain": "base" },
+    "defaultParams": {
+      "chain": "base"
+    },
     "paramHints": "chain (default: base), symbol (token ticker e.g. 'AERO')",
     "tier": "standard"
   },
@@ -51,11 +71,15 @@
     "id": "silverback-trending",
     "name": "Silverback DeFi — Trending Tokens",
     "url": "https://x402.silverbackdefi.app/api/v1/trending-tokens",
-    "capabilities": ["trending"],
+    "capabilities": [
+      "trending"
+    ],
     "costPerCall": 0.001,
     "reliability": 0.9,
     "description": "Trending tokens and pools by volume and activity on a specific chain",
-    "defaultParams": { "chain": "base" },
+    "defaultParams": {
+      "chain": "base"
+    },
     "paramHints": "chain (default: base). Returns trending tokens — no token-specific filtering.",
     "tier": "standard"
   },
@@ -63,11 +87,17 @@
     "id": "silverback-top-pools",
     "name": "Silverback DeFi — Top Pools",
     "url": "https://x402.silverbackdefi.app/api/v1/top-pools",
-    "capabilities": ["yield_data", "defi_portfolio", "tvl_tracking"],
+    "capabilities": [
+      "yield_data",
+      "defi_portfolio",
+      "tvl_tracking"
+    ],
     "costPerCall": 0.001,
     "reliability": 0.9,
     "description": "Top yielding pools on Base DEXes",
-    "defaultParams": { "chain": "base" },
+    "defaultParams": {
+      "chain": "base"
+    },
     "paramHints": "chain (default: base). Returns top pools — no token-specific filtering.",
     "tier": "standard"
   },
@@ -75,11 +105,16 @@
     "id": "silverback-dex-metrics",
     "name": "Silverback DeFi — DEX Metrics",
     "url": "https://x402.silverbackdefi.app/api/v1/dex-metrics",
-    "capabilities": ["dex_flow", "blockchain_intelligence"],
+    "capabilities": [
+      "dex_flow",
+      "blockchain_intelligence"
+    ],
     "costPerCall": 0.002,
     "reliability": 0.9,
     "description": "Base DEX ecosystem: volume, TVL, gas stats, top pairs",
-    "defaultParams": { "chain": "base" },
+    "defaultParams": {
+      "chain": "base"
+    },
     "paramHints": "chain (default: base). Returns overall DEX metrics — no token-specific filtering.",
     "tier": "standard"
   },
@@ -87,11 +122,16 @@
     "id": "silverback-defi-yield",
     "name": "Silverback DeFi — DeFi Yield",
     "url": "https://x402.silverbackdefi.app/api/v1/defi-yield",
-    "capabilities": ["apy_comparison", "yield_data"],
+    "capabilities": [
+      "apy_comparison",
+      "yield_data"
+    ],
     "costPerCall": 0.02,
     "reliability": 0.85,
     "description": "DeFi yield opportunities on Base",
-    "defaultParams": { "chain": "base" },
+    "defaultParams": {
+      "chain": "base"
+    },
     "paramHints": "chain (default: base). Returns top yield opportunities — no token-specific filtering.",
     "tier": "standard"
   },
@@ -99,11 +139,16 @@
     "id": "gloria-news",
     "name": "Gloria AI — News",
     "url": "https://api.itsgloria.ai/news",
-    "capabilities": ["crypto_news", "regulatory_updates"],
+    "capabilities": [
+      "crypto_news",
+      "regulatory_updates"
+    ],
     "costPerCall": 0.03,
     "reliability": 0.85,
     "description": "Latest 10 crypto news headlines by category (ai, base, bitcoin, crypto, defi, ethereum, macro, solana)",
-    "defaultParams": { "categories": "base" },
+    "defaultParams": {
+      "categories": "base"
+    },
     "paramHints": "categories (required, one of: 'ai', 'base', 'bitcoin', 'crypto', 'defi', 'ethereum', 'macro', 'solana'. Use 'base' unless the query targets a specific category)",
     "tier": "standard"
   },
@@ -111,11 +156,15 @@
     "id": "gloria-recaps",
     "name": "Gloria AI — Recaps",
     "url": "https://api.itsgloria.ai/recaps",
-    "capabilities": ["market_sentiment"],
-    "costPerCall": 0.10,
+    "capabilities": [
+      "market_sentiment"
+    ],
+    "costPerCall": 0.1,
     "reliability": 0.85,
     "description": "12-24 hour news recap and sentiment summary by category",
-    "defaultParams": { "categories": "base" },
+    "defaultParams": {
+      "categories": "base"
+    },
     "paramHints": "categories (required, one of: 'ai', 'base', 'bitcoin', 'crypto', 'defi', 'ethereum', 'macro', 'solana'. Use 'base' unless the query targets a specific category)",
     "tier": "premium"
   },
@@ -123,7 +172,10 @@
     "id": "gloria-ticker",
     "name": "Gloria AI — Ticker Summary",
     "url": "https://api.itsgloria.ai/news-ticker-summary",
-    "capabilities": ["token_analysis", "crypto_news"],
+    "capabilities": [
+      "token_analysis",
+      "crypto_news"
+    ],
     "costPerCall": 0.031,
     "reliability": 0.85,
     "description": "24-hour token activity summary with key events and price context",
@@ -134,7 +186,10 @@
     "id": "neynar-cast-search",
     "name": "Neynar — Cast Search",
     "url": "https://api.neynar.com/v2/farcaster/cast/search",
-    "capabilities": ["social_data", "farcaster_trends"],
+    "capabilities": [
+      "social_data",
+      "farcaster_trends"
+    ],
     "costPerCall": 0.001,
     "reliability": 0.9,
     "description": "Search Farcaster casts by keyword for social sentiment and community discussion",
@@ -146,7 +201,9 @@
     "id": "neynar-user-search",
     "name": "Neynar — User Search",
     "url": "https://api.neynar.com/v2/farcaster/user/search",
-    "capabilities": ["social_data"],
+    "capabilities": [
+      "social_data"
+    ],
     "costPerCall": 0.001,
     "reliability": 0.9,
     "description": "Search Farcaster users and profiles for community analysis",
@@ -158,11 +215,16 @@
     "id": "neynar-feed",
     "name": "Neynar — Feed",
     "url": "https://api.neynar.com/v2/farcaster/feed",
-    "capabilities": ["farcaster_feed"],
+    "capabilities": [
+      "farcaster_feed"
+    ],
     "costPerCall": 0.001,
     "reliability": 0.9,
     "description": "Fetch a specific Farcaster user's feed by FID. Requires a known Farcaster user ID — not for general search",
-    "defaultParams": { "feed_type": "following", "limit": "25" },
+    "defaultParams": {
+      "feed_type": "following",
+      "limit": "25"
+    },
     "paramHints": "fid (required: Farcaster user ID number). Only use if you know a specific user's FID.",
     "tier": "standard"
   },
@@ -170,7 +232,10 @@
     "id": "neynar-channel-search",
     "name": "Neynar — Channel Search",
     "url": "https://api.neynar.com/v2/farcaster/channel/search",
-    "capabilities": ["social_data", "farcaster_trends"],
+    "capabilities": [
+      "social_data",
+      "farcaster_trends"
+    ],
     "costPerCall": 0.001,
     "reliability": 0.9,
     "description": "Search Farcaster channels for community and topic analysis",
@@ -182,7 +247,9 @@
     "id": "elsa-search-token",
     "name": "Elsa x402 — Search Token",
     "url": "https://x402-api.heyelsa.ai/api/search_token",
-    "capabilities": ["token_search"],
+    "capabilities": [
+      "token_search"
+    ],
     "costPerCall": 0.001,
     "reliability": 0.85,
     "description": "Search for token by name or symbol across multiple chains. Use first to resolve token addresses for other Elsa endpoints.",
@@ -194,7 +261,9 @@
     "id": "elsa-token-price",
     "name": "Elsa x402 — Token Price",
     "url": "https://x402-api.heyelsa.ai/api/get_token_price",
-    "capabilities": ["token_price"],
+    "capabilities": [
+      "token_price"
+    ],
     "costPerCall": 0.002,
     "reliability": 0.85,
     "description": "Get token price with best-price discovery across 20+ DEX protocols. Requires chain and token_address.",
@@ -206,7 +275,9 @@
     "id": "elsa-analyze-wallet",
     "name": "Elsa x402 — Analyze Wallet",
     "url": "https://x402-api.heyelsa.ai/api/analyze_wallet",
-    "capabilities": ["wallet_analysis"],
+    "capabilities": [
+      "wallet_analysis"
+    ],
     "costPerCall": 0.02,
     "reliability": 0.85,
     "description": "Deep wallet analysis: holdings, PnL, risk scoring, diversification",
@@ -218,7 +289,10 @@
     "id": "elsa-yield-suggestions",
     "name": "Elsa x402 — Yield Suggestions",
     "url": "https://x402-api.heyelsa.ai/api/get_yield_suggestions",
-    "capabilities": ["yield_suggestions", "yield_data"],
+    "capabilities": [
+      "yield_suggestions",
+      "yield_data"
+    ],
     "costPerCall": 0.02,
     "reliability": 0.85,
     "description": "AI-powered yield farming recommendations based on risk profile",
@@ -230,7 +304,9 @@
     "id": "elsa-gas-prices",
     "name": "Elsa x402 — Gas Prices",
     "url": "https://x402-api.heyelsa.ai/api/get_gas_prices",
-    "capabilities": ["gas_data"],
+    "capabilities": [
+      "gas_data"
+    ],
     "costPerCall": 0.001,
     "reliability": 0.85,
     "description": "Current gas prices across supported networks",
@@ -242,7 +318,10 @@
     "id": "elsa-portfolio",
     "name": "Elsa x402 — Portfolio",
     "url": "https://x402-api.heyelsa.ai/api/get_portfolio",
-    "capabilities": ["defi_portfolio", "wallet_analysis"],
+    "capabilities": [
+      "defi_portfolio",
+      "wallet_analysis"
+    ],
     "costPerCall": 0.01,
     "reliability": 0.85,
     "description": "Multi-chain portfolio overview with balances and positions across 15+ chains",
@@ -254,7 +333,9 @@
     "id": "firecrawl-search",
     "name": "Firecrawl — Web Search",
     "url": "https://api.firecrawl.dev/v1/x402/search",
-    "capabilities": ["web_search"],
+    "capabilities": [
+      "web_search"
+    ],
     "costPerCall": 0.01,
     "reliability": 0.8,
     "description": "Search the web and get LLM-ready markdown content. Use for breaking news, governance proposals, or data not covered by other endpoints",
@@ -266,228 +347,288 @@
     "id": "einstein-latest-pairs",
     "name": "Einstein AI — Latest Pairs",
     "url": "https://emc2ai.io/x402/bitquery/latest-pairs/raw",
-    "capabilities": ["new_token_launches", "blockchain_intelligence"],
+    "capabilities": [
+      "new_token_launches",
+      "blockchain_intelligence"
+    ],
     "costPerCall": 0.25,
     "reliability": 0.85,
     "description": "Latest deployed tokens on-chain with liquidity pool data. Deep Bitquery intelligence",
     "method": "POST",
-    "defaultParams": { "chain": "base", "limit": "10" },
+    "defaultParams": {
+      "chain": "base",
+      "limit": "10"
+    },
     "tier": "premium"
   },
   {
     "id": "einstein-smart-money",
     "name": "Einstein AI — Smart Money Leaderboard",
     "url": "https://emc2ai.io/x402/bitquery/smart-money/raw",
-    "capabilities": ["smart_money_leaderboard"],
+    "capabilities": [
+      "smart_money_leaderboard"
+    ],
     "costPerCall": 0.85,
     "reliability": 0.85,
     "description": "Top trader wallets with buy/sell flow analysis and accumulation patterns. Deep Bitquery intelligence",
     "method": "POST",
-    "defaultParams": { "chain": "base", "limit": "10", "timeperiod": "24h" },
+    "defaultParams": {
+      "chain": "base",
+      "limit": "10",
+      "timeperiod": "24h"
+    },
     "tier": "premium"
   },
   {
     "id": "zapper-token-price",
     "name": "Zapper — Token Price",
     "url": "https://public.zapper.xyz/x402/token-price",
-    "capabilities": ["token_price", "market_data"],
+    "capabilities": [
+      "token_price",
+      "market_data"
+    ],
     "costPerCall": 0.0011,
     "reliability": 0.9,
     "description": "Real-time token price, market cap, 5m/1h/24h price changes, volume, and liquidity",
     "paramHints": "address (required: 0x token contract address), chainId (required: chain ID e.g. 8453 for Base), currency (optional: default 'USD')",
     "method": "POST",
-    "tier": "standard"
+    "tier": "disabled"
   },
   {
     "id": "zapper-token-holders",
     "name": "Zapper — Token Holders",
     "url": "https://public.zapper.xyz/x402/token-holders",
-    "capabilities": ["token_analysis", "whale_tracking"],
+    "capabilities": [
+      "token_analysis",
+      "whale_tracking"
+    ],
     "costPerCall": 0.0011,
     "reliability": 0.9,
     "description": "List of token holders with balances, percentile shares, and identity info (ENS, Farcaster)",
     "paramHints": "address (required: 0x token contract address), chainId (required: chain ID e.g. 8453), first (required: number of holders to return), after (optional: pagination cursor)",
     "method": "POST",
-    "tier": "standard"
+    "tier": "disabled"
   },
   {
     "id": "zapper-token-ranking",
     "name": "Zapper — Token Ranking",
     "url": "https://public.zapper.xyz/x402/token-ranking",
-    "capabilities": ["trending", "market_data"],
+    "capabilities": [
+      "trending",
+      "market_data"
+    ],
     "costPerCall": 0.0045,
     "reliability": 0.9,
     "description": "Trending tokens ranked by swap activity and adoption velocity, with price data and buyer counts",
     "paramHints": "first (optional: number of results, default 10), after (optional: pagination cursor), fid (optional: Farcaster ID for personalized ranking)",
     "method": "POST",
-    "tier": "standard"
+    "tier": "disabled"
   },
   {
     "id": "zapper-token-activity-feed",
     "name": "Zapper — Token Activity Feed",
     "url": "https://public.zapper.xyz/x402/token-activity-feed",
-    "capabilities": ["token_analysis", "farcaster_trends", "social_data"],
+    "capabilities": [
+      "token_analysis",
+      "farcaster_trends",
+      "social_data"
+    ],
     "costPerCall": 0.0037,
     "reliability": 0.9,
     "description": "Combined activity feed for a specific token: swaps and top Farcaster casts about the token",
     "paramHints": "chainId (required: chain ID e.g. 8453), tokenAddress (required: 0x token contract address), fid (optional: Farcaster ID for personalization)",
     "method": "POST",
-    "tier": "standard"
+    "tier": "disabled"
   },
   {
     "id": "zapper-search",
     "name": "Zapper — Search",
     "url": "https://public.zapper.xyz/x402/search",
-    "capabilities": ["token_search"],
+    "capabilities": [
+      "token_search"
+    ],
     "costPerCall": 0.0045,
     "reliability": 0.9,
     "description": "Search for ERC20 tokens, NFT collections, users, and apps by name across all chains. Use to resolve token names to contract addresses.",
     "paramHints": "search (required: query string e.g. 'AERO'), categories (optional: array of 'ERC20_TOKEN', 'GAS_TOKEN', 'NFT_COLLECTION', 'USER', 'APP', default ['ERC20_TOKEN']), maxResultsPerCategory (optional: default 5)",
     "method": "POST",
-    "tier": "standard"
+    "tier": "disabled"
   },
   {
     "id": "zapper-portfolio-totals",
     "name": "Zapper — Portfolio Totals",
     "url": "https://public.zapper.xyz/x402/portfolio-totals",
-    "capabilities": ["defi_portfolio", "wallet_analysis"],
+    "capabilities": [
+      "defi_portfolio",
+      "wallet_analysis"
+    ],
     "costPerCall": 0.0019,
     "reliability": 0.9,
     "description": "Aggregated portfolio value across tokens, DeFi, and NFTs broken down by network for one or more addresses",
     "paramHints": "addresses (required: array of 0x wallet addresses), chainIds (optional: array of chain IDs e.g. [8453])",
     "method": "POST",
-    "tier": "standard"
+    "tier": "disabled"
   },
   {
     "id": "zapper-token-balances",
     "name": "Zapper — Token Balances",
     "url": "https://public.zapper.xyz/x402/token-balances",
-    "capabilities": ["wallet_analysis", "token_analysis"],
+    "capabilities": [
+      "wallet_analysis",
+      "token_analysis"
+    ],
     "costPerCall": 0.0011,
     "reliability": 0.9,
     "description": "Detailed token holdings with USD values for one or more addresses, optionally filtered by chain",
     "paramHints": "addresses (required: array of 0x wallet addresses), first (optional: number of tokens, max 20, default 10), chainIds (optional: array of chain IDs)",
     "method": "POST",
-    "tier": "standard"
+    "tier": "disabled"
   },
   {
     "id": "zapper-defi-balances",
     "name": "Zapper — DeFi Balances",
     "url": "https://public.zapper.xyz/x402/defi-balances",
-    "capabilities": ["defi_portfolio", "yield_data"],
+    "capabilities": [
+      "defi_portfolio",
+      "yield_data"
+    ],
     "costPerCall": 0.0011,
     "reliability": 0.9,
     "description": "DeFi positions (liquidity pools, yield farming, lending, staking) for one or more addresses",
     "paramHints": "addresses (required: array of 0x wallet addresses), first (optional: number of positions, max 50, default 10), chainIds (optional: array of chain IDs)",
     "method": "POST",
-    "tier": "standard"
+    "tier": "disabled"
   },
   {
     "id": "zapper-general-swap-feed",
     "name": "Zapper — General Swap Feed",
     "url": "https://public.zapper.xyz/x402/general-swap-feed",
-    "capabilities": ["dex_flow", "smart_money"],
+    "capabilities": [
+      "dex_flow",
+      "smart_money"
+    ],
     "costPerCall": 0.0037,
     "reliability": 0.9,
     "description": "Real-time feed of swap activity across Farcaster including token trades, volume, and social context",
     "paramHints": "No required parameters. Returns latest swap activity with Farcaster social context.",
     "method": "POST",
-    "tier": "standard"
+    "tier": "disabled"
   },
   {
     "id": "zapper-transaction-history",
     "name": "Zapper — Transaction History",
     "url": "https://public.zapper.xyz/x402/transaction-history",
-    "capabilities": ["blockchain_intelligence", "wallet_analysis"],
+    "capabilities": [
+      "blockchain_intelligence",
+      "wallet_analysis"
+    ],
     "costPerCall": 0.0011,
     "reliability": 0.9,
     "description": "Chronological transaction timeline with human-readable interpretations for one or more addresses",
     "paramHints": "subjects (required: array of 0x wallet addresses), perspective (optional: 'All', 'Sent', 'Received', default 'All'), first (optional: number of results, default 10), chainIds (optional: array of chain IDs)",
     "method": "POST",
-    "tier": "standard"
+    "tier": "disabled"
   },
   {
     "id": "zapper-account-identity",
     "name": "Zapper — Account Identity",
     "url": "https://public.zapper.xyz/x402/account-identity",
-    "capabilities": ["social_data", "wallet_analysis"],
+    "capabilities": [
+      "social_data",
+      "wallet_analysis"
+    ],
     "costPerCall": 0.0011,
     "reliability": 0.9,
     "description": "Resolve social identity (ENS, Farcaster, Lens, Basenames) for a wallet address",
     "paramHints": "address (required: 0x wallet address)",
     "method": "POST",
-    "tier": "standard"
+    "tier": "disabled"
   },
   {
     "id": "zapper-historical-token-price",
     "name": "Zapper — Historical Token Price",
     "url": "https://public.zapper.xyz/x402/historical-token-price",
-    "capabilities": ["token_price"],
+    "capabilities": [
+      "token_price"
+    ],
     "costPerCall": 0.0011,
     "reliability": 0.9,
     "description": "Token price at any historical point in time, useful for PnL calculations and charting",
     "paramHints": "address (required: 0x token contract address), chainId (required: chain ID), timestamp (required: unix timestamp in milliseconds), currency (optional: default 'USD')",
     "method": "POST",
-    "tier": "standard"
+    "tier": "disabled"
   },
   {
     "id": "zapper-nft-balances",
     "name": "Zapper — NFT Balances",
     "url": "https://public.zapper.xyz/x402/nft-balances",
-    "capabilities": ["nft_data", "wallet_analysis"],
+    "capabilities": [
+      "nft_data",
+      "wallet_analysis"
+    ],
     "costPerCall": 0.0011,
     "reliability": 0.9,
     "description": "Individual NFT holdings with floor prices and estimated values for one or more addresses",
     "paramHints": "addresses (required: array of 0x wallet addresses), first (optional: number of NFTs, default 10), sortBy (optional: 'USD_WORTH', 'NETWORK', 'COLLECTION'), chainIds (optional: array of chain IDs)",
     "method": "POST",
-    "tier": "standard"
+    "tier": "disabled"
   },
   {
     "id": "zapper-nft-ranking",
     "name": "Zapper — NFT Ranking",
     "url": "https://public.zapper.xyz/x402/nft-ranking",
-    "capabilities": ["nft_data", "trending"],
+    "capabilities": [
+      "nft_data",
+      "trending"
+    ],
     "costPerCall": 0.0045,
     "reliability": 0.9,
     "description": "Trending NFT collections ranked by trading volume and popularity, with floor prices and volume stats",
     "paramHints": "first (optional: number of results, default 10), after (optional: pagination cursor)",
     "method": "POST",
-    "tier": "standard"
+    "tier": "disabled"
   },
   {
     "id": "zapper-nft-collection-metadata",
     "name": "Zapper — NFT Collection Metadata",
     "url": "https://public.zapper.xyz/x402/nft-collection-metadata",
-    "capabilities": ["nft_data", "market_data"],
+    "capabilities": [
+      "nft_data",
+      "market_data"
+    ],
     "costPerCall": 0.0011,
     "reliability": 0.9,
     "description": "NFT collection stats: floor price, market cap, holder count, events, and sample NFTs",
     "paramHints": "collections (required: array of objects with 'address' (string) and 'chainId' (integer) for each collection)",
     "method": "POST",
-    "tier": "standard"
+    "tier": "disabled"
   },
   {
     "id": "zapper-nft-token-metadata",
     "name": "Zapper — NFT Token Metadata",
     "url": "https://public.zapper.xyz/x402/nft-token-metadata",
-    "capabilities": ["nft_data"],
+    "capabilities": [
+      "nft_data"
+    ],
     "costPerCall": 0.0011,
     "reliability": 0.9,
     "description": "Full metadata for a specific NFT including traits, media, holder info, estimated value, and last sale price",
     "paramHints": "collectionAddress (required: 0x collection contract address), chainId (required: chain ID), tokenId (required: specific token ID string)",
     "method": "POST",
-    "tier": "standard"
+    "tier": "disabled"
   },
   {
     "id": "zapper-transaction-details",
     "name": "Zapper — Transaction Details",
     "url": "https://public.zapper.xyz/x402/transaction-details",
-    "capabilities": ["blockchain_intelligence"],
+    "capabilities": [
+      "blockchain_intelligence"
+    ],
     "costPerCall": 0.0011,
     "reliability": 0.9,
     "description": "Human-readable transaction interpretation with metadata and balance changes for a specific tx hash",
     "paramHints": "hash (required: 0x transaction hash), chainId (required: chain ID where the transaction occurred)",
     "method": "POST",
-    "tier": "standard"
+    "tier": "disabled"
   }
 ]

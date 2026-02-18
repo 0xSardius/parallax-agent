@@ -14,7 +14,7 @@ export const X402EndpointSchema = z.object({
   queryParamName: z.string().optional(), // Param name for the dynamic query value (default: "query")
   paramHints: z.string().optional(), // Human-readable param guidance for LLM decomposer
   method: z.enum(["GET", "POST"]).optional(),
-  tier: z.enum(["standard", "premium"]).default("standard"),
+  tier: z.enum(["standard", "premium", "disabled"]).default("standard"),
 });
 
 export type QueryTier = "standard" | "premium";
