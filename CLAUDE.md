@@ -21,41 +21,55 @@ Parallax is both a **consumer** (pays other x402 endpoints for data) and a **pro
 - **Production URL:** https://parallax-agent-production.up.railway.app
 - **Railway dashboard:** https://railway.com/project/e90648fd-3915-492d-9fdf-5f15324905be
 - **Agent card:** https://parallax-agent-production.up.railway.app/.well-known/agent-card.json
+- **ERC-8004 registration:** https://parallax-agent-production.up.railway.app/.well-known/agent-registration.json
 - **Mock mode:** OFF — real x402 payments active
-- **ERC-8004:** Registered on Base mainnet ([tx](https://basescan.org/tx/0xd3b2a333c4dcb7ffad254f4e22bf4d02d41da35b01aa98179daf236dfd9daa1f))
-- **xgate:** Indexed automatically from ERC-8004 registry + agent card crawling
+- **ERC-8004:** Agent #17653 on Base mainnet ([registration tx](https://basescan.org/tx/0xd3b2a333c4dcb7ffad254f4e22bf4d02d41da35b01aa98179daf236dfd9daa1f))
+- **8004scan:** https://www.8004scan.io/agents/base/17653 — metadata score 57/100, waiting for re-crawl to pick up new fields
+- **xgate:** `tokenUri` set on-chain ([tx](https://basescan.org/tx/0x0c3d97deec86a7668443cf46afb6756756816d63fb4dc90057b604b11f84d877)), waiting for indexer to crawl
 
-### Live-tested (2026-02-16)
-- AERO investment query: 5/6 endpoints succeeded, real Farcaster social data, protocol revenue analysis. Cost: $0.083
-- Yield opportunities query: 3/4 succeeded, specific pool recommendations with APRs and sustainability scores. Cost: $0.054
-- Farcaster community query: 2/3 succeeded after Neynar param fix. Cost: $0.014
+### Live-tested (2026-02-17)
+- AERO investment query: 5/6 endpoints succeeded, real Farcaster social data, protocol revenue analysis
+- Yield opportunities query: 4/4 succeeded in mock, 3/4 live, specific pool recommendations with APRs
 - Reports include confidence scoring (15-75/100), data gaps, and risk analysis
+- Actual LLM cost per query: ~$0.026 (decomposition ~$0.011 + synthesis ~$0.015)
+- Actual x402 cost per query: ~$0.005-0.05 depending on endpoints selected
 
 ### Wallet Balances
 - **CDP Wallet:** `0x13bE67822Ea3B51bFa477A6b73DFc2C25D12359A` — ~$7.98 USDC + ~$2 ETH (for gas)
 - **Self-funding model:** Incoming x402 payments go to CDP wallet, same wallet pays outgoing endpoint calls. Margin accumulates. Sweep profits periodically via CDP SDK.
 - Check balance: `npx tsx src/check-balance.ts`
 
-### What's Done This Session
-- **Fixed Neynar endpoints** — Added `queryParamName: "q"`, fixed Feed capability to `farcaster_feed`
-- **Fixed Gloria News** — param name `categories` (plural), not `category`
-- **Prompt iteration** — Decomposer now outputs structured params per sub-task with `paramHints` from registry
-- **Code fence stripping** — Pipeline handles LLM wrapping JSON in ` ```json ``` `
-- **ERC-8004 metadata** — Added `/.well-known/agent-registration.json` with full spec compliance (type, services, registrations). Updated on-chain URI via `setAgentURI` ([tx](https://basescan.org/tx/0x3103f612e5741ea97d079a5940e543197a42a4d9215cb598b39639da2be9301f))
-- **Logo** — Added at `/logo.png`, wired into ERC-8004 `image` field
-- **Zapper endpoints** — Added 17 new live endpoints ($0.001-0.004 each)
+### What's Done (2026-02-17 session)
+
+**Reliability improvements:**
+- **Parallel endpoint execution** — `Promise.allSettled` replaces sequential loop. Endpoint phase ~4s instead of ~12s.
+- **Real LLM cost tracking** — Token-based pricing from `generateText().usage` instead of hardcoded estimates. Sonnet 4.5: $3/MTok input, $15/MTok output.
+- **Defensive param merge** — Strip empty/null LLM params before merging with `defaultParams`. Fixes Gloria News + protects all endpoints.
+- **x402 diagnostic logging** — Stack trace in catch block for debugging payment flow errors.
+- **Gloria paramHints updated** — Changed "optional" → "required" with valid values enumerated.
+
+**Discoverability improvements:**
+- **ERC-8004 metadata fields** — Added `agentType: "orchestrator"`, `tags`, `categories` to registration JSON.
+- **Re-set agentURI on-chain** — Previous `setAgentURI` tx wasn't indexed by xgate. Re-ran successfully, verified `tokenURI(17653)` returns correct URL on-chain.
+- **8004scan score** — Went from 27/100 → 57/100. Remaining gaps are usage-based (quality, wallet, popularity scores).
+
+**Zapper investigation (parked):**
+- Full diagnostic: 402 parsing works, payment payload created correctly, `X-PAYMENT` header sent, but Zapper returns 402 again on retry.
+- Root cause: Zapper uses x402 v1 protocol. Our `@x402/fetch` v2 library claims backward compat but the payment isn't accepted.
+- **Decision:** 17 Zapper endpoints set to `tier: "disabled"`. Easy to re-enable by changing tier back to `"standard"`. 24 active endpoints remain with full DeFi intelligence coverage.
+
+**Previous session (2026-02-16):**
+- Fixed Neynar endpoints — Added `queryParamName: "q"`, fixed Feed capability to `farcaster_feed`
+- Fixed Gloria News — param name `categories` (plural), not `category`
+- Prompt iteration — Decomposer outputs structured params per sub-task with `paramHints` from registry
+- Code fence stripping — Pipeline handles LLM wrapping JSON in code fences
+- ERC-8004 metadata — Added `/.well-known/agent-registration.json` route
+- Logo — Added at `/logo.png`, wired into ERC-8004 `image` field
+- Added 17 Zapper endpoints (now disabled, see above)
 
 ### Next Session — Ready to Action
 
-**1. Parallel endpoint execution** (10 min, high impact)
-- One file: `src/pipeline.ts` — replace the sequential `for` loop with `Promise.allSettled`
-- Sub-tasks are already independent, no dependency chain
-- Expected: query time drops from ~40s to ~10s
-
-**2. Daydreams Router integration** (15 min, medium impact)
-- The Daydreams team suggested we use their inference router
-- It's an OpenAI-compatible proxy: pay for LLM calls with USDC via x402 instead of API keys
-- Replaces `ANTHROPIC_API_KEY` — does NOT touch the pipeline, prompts, or endpoint calls
+**1. Daydreams Router integration** (15 min, medium impact)
 - Install `@daydreamsai/ai-sdk-provider`, change 2 lines in `pipeline.ts`:
   ```typescript
   // Before
@@ -65,29 +79,41 @@ Parallax is both a **consumer** (pays other x402 endpoints for data) and a **pro
   import { dreamsRouter } from "@daydreamsai/ai-sdk-provider";
   const model = dreamsRouter("anthropic/claude-sonnet-4-5-20250929");
   ```
-- Benefits: unified USDC billing (no API keys), provider fallback, model flexibility
+- Benefits: unified USDC billing (no API keys), provider fallback, ecosystem visibility
 - Docs: https://docs.dreams.fun/docs/router
 - npm: `@daydreamsai/ai-sdk-provider`
+
+**2. More prompt tuning** (medium impact)
+- Run 5-10 diverse queries (risk assessment, portfolio analysis, trend spotting, specific tokens)
+- Tune decomposition + synthesis prompts for quality and accuracy
+
+**3. Chat UI (Phase 2)** (high impact)
+- Next.js frontend opens Parallax to humans, not just agents
+- `useChat` hooks, wallet connection, streaming output
+
+**4. Farcaster/Telegram bot** (medium impact)
+- Lower friction entry point for building initial usage and reputation
 
 ### Full Roadmap (prioritized)
 
 **High impact:**
-1. **Parallel endpoint execution** — ~40s → ~10s query time
+1. ~~Parallel endpoint execution~~ — DONE
 2. **Daydreams Router** — USDC-native LLM calls, no API keys
-3. **Chat UI (Phase 2)** — Next.js frontend opens Parallax to humans
-4. **More prompt tuning** — Run 5+ diverse queries, tune decomposition + synthesis
+3. **Chat UI (Phase 2)** — Next.js frontend
+4. **More prompt tuning** — Diverse queries, tune for quality
 
 **Medium impact:**
-5. **Streaming responses** — Return partial results as they arrive (better for Chat UI)
-6. **Postgres payment storage** — Replace in-memory storage so payment history survives restarts
-7. **Memory integration** — Save query results, track endpoint reliability over time
-8. **Farcaster/Telegram bot** — Lower friction entry point for users
-9. **Profit sweep script** — Transfer excess USDC from CDP wallet to personal wallet
+5. **Streaming responses** — Return partial results as they arrive
+6. **Postgres payment storage** — Replace in-memory storage for persistence
+7. **Memory integration** — Save query results, track endpoint reliability
+8. **Farcaster/Telegram bot** — Lower friction entry point
+9. **Profit sweep script** — Transfer excess USDC from CDP wallet
 
 **Lower priority:**
-10. **TEE migration** — Deploy to Phala Network for TEE badge on 8004scan. Trust signal, not blocking.
-11. **IPFS-pinned metadata** — Content-addressed agentURI. Minor trust bump.
-12. **Error edge cases** — Test: all endpoints fail, no matching endpoints, malformed LLM output
+10. **Re-enable Zapper** — When x402 v1 compat is resolved or Zapper upgrades to v2
+11. **TEE migration** — Deploy to Phala Network for TEE badge on 8004scan
+12. **IPFS-pinned metadata** — Content-addressed agentURI for trust bump
+13. **Error edge cases** — Test: all endpoints fail, no matching endpoints, malformed LLM output
 
 ## Build Progress
 
@@ -109,6 +135,18 @@ Core pipeline works end-to-end in mock mode and with real Anthropic API.
 | 9 | Test live x402 payments (real USDC) | Done |
 | 10 | Go live (`MOCK_MODE=false` on Railway) | Done |
 
+### Phase 1.6 — COMPLETE (Reliability + Discoverability)
+
+| Step | What | Status |
+|------|------|--------|
+| 1 | Parallel endpoint execution | Done |
+| 2 | Real LLM cost tracking (token-based) | Done |
+| 3 | Defensive param merge for defaultParams | Done |
+| 4 | ERC-8004 metadata: agentType, tags, categories | Done |
+| 5 | Re-set agentURI on-chain for xgate indexing | Done |
+| 6 | Zapper v1 investigation + disable | Done |
+| 7 | x402 diagnostic logging | Done |
+
 ### Phase 2 — Chat UI (upcoming)
 - Next.js chat interface with Vercel AI SDK (`useChat` hooks)
 - Streaming report output via Lucid SSE
@@ -116,7 +154,6 @@ Core pipeline works end-to-end in mock mode and with real Anthropic API.
 - User pays USDC -> Parallax pays endpoints -> retains margin
 
 ### Phase 3 — Growth (future)
-- Parallel endpoint execution
 - Endpoint auto-discovery via xgate Bazaar API
 - A2A agent-to-agent supply chains (Parallax calls other Lucid agents as data sources)
 - Reliability scoring + smart routing
@@ -135,18 +172,18 @@ Core pipeline works end-to-end in mock mode and with real Anthropic API.
 src/
 ├── index.ts                      # CLI entry point — single query or interactive mode
 ├── server.ts                     # Lucid agent server (createAgent + createAgentApp)
-├── pipeline.ts                   # Core pipeline: decompose → execute → synthesize
+├── pipeline.ts                   # Core pipeline: decompose → execute (parallel) → synthesize
 ├── check-balance.ts              # Utility: view CDP wallet balances (ETH + USDC)
-├── register-8004.ts              # Utility: register agent on ERC-8004 IdentityRegistry
+├── register-8004.ts              # Utility: register/update agent on ERC-8004 IdentityRegistry
 ├── agent/
 │   ├── types.ts                  # Zod-validated types (endpoints, sub-tasks, results, reports)
 │   └── contexts/
 │       └── registry.ts           # Endpoint registry — load, search by capability (pure functions)
 ├── endpoints/
-│   ├── registry.json             # 40 live x402 endpoints (Zapper, Silverback, Neynar, Elsa, Gloria, Firecrawl, Einstein)
-│   └── client.ts                 # x402 HTTP client (mock mode, CDP wallet, timeouts)
+│   ├── registry.json             # 41 x402 endpoints (24 active, 17 Zapper disabled)
+│   └── client.ts                 # x402 HTTP client (mock mode, CDP wallet, timeouts, defensive params)
 ├── prompts/
-│   ├── decompose.ts              # Decomposition prompt template
+│   ├── decompose.ts              # Decomposition prompt template (includes paramHints)
 │   └── synthesize.ts             # Synthesis prompt template
 └── utils/
     └── logger.ts                 # Structured endpoint call logging
@@ -162,15 +199,15 @@ Routes:
 - `GET /health` — `{ ok: true, version }`
 - `GET /entrypoints` — List skills with streaming info
 - `GET /.well-known/agent.json` / `agent-card.json` — Full A2A agent card (auto-generated by Lucid)
-- `GET /.well-known/agent-registration.json` — ERC-8004 registration metadata
+- `GET /.well-known/agent-registration.json` — ERC-8004 registration metadata (agentType, tags, categories, services)
 - `GET /logo.png` — Agent logo (512x512 PNG)
 - `POST /entrypoints/:key/invoke` — x402-gated invoke (returns 402 without payment)
 
-**Core loop:** Query -> Decompose into sub-tasks -> Match to x402 endpoints -> Execute calls (sequential) -> LLM synthesizes report -> Return report + cost summary
+**Core loop:** Query → Decompose into sub-tasks → Match to x402 endpoints → Execute calls (parallel via Promise.allSettled) → LLM synthesizes report → Return report + cost summary
 
 **Payment flow:**
 ```
-Caller pays $0.25 USDC → CDP wallet → spends ~$0.005-0.05 on x402 endpoints → margin stays in wallet
+Caller pays $0.25 USDC → CDP wallet → spends ~$0.03-0.08 on x402 + LLM → margin stays in wallet
 ```
 
 ## Build & Run Commands
@@ -200,14 +237,14 @@ npx tsx src/check-balance.ts
 # Register on ERC-8004 (already done — only run if re-registering)
 npx tsx src/register-8004.ts
 
+# Update ERC-8004 agentURI on-chain
+npx tsx src/register-8004.ts update-uri
+
 # Deploy to Railway
 railway up --detach
 
 # Set Railway env vars
 railway variables set KEY="value"
-
-# Check Railway deployment status
-railway service status
 
 # View Railway logs
 railway service logs
@@ -218,14 +255,12 @@ railway service logs
 curl https://parallax-agent-production.up.railway.app/health
 curl https://parallax-agent-production.up.railway.app/entrypoints
 curl https://parallax-agent-production.up.railway.app/.well-known/agent-card.json
+curl https://parallax-agent-production.up.railway.app/.well-known/agent-registration.json
 
 # Invoke (returns 402 — correct, x402 payment required)
 curl -X POST https://parallax-agent-production.up.railway.app/entrypoints/intelligence-report/invoke \
   -H "Content-Type: application/json" \
   -d '{"input": {"query": "Should I invest in AERO on Base?"}}'
-
-# Check xgate indexing status
-curl -s "https://api.xgate.run/agents?wallet=0x13bE67822Ea3B51bFa477A6b73DFc2C25D12359A" | python -m json.tool
 ```
 
 ## Environment Variables
@@ -279,12 +314,15 @@ const fetchWithPayment = wrapFetchWithPayment(fetch, client);
 const response = await fetchWithPayment(endpoint.url);
 ```
 
+**Note:** This only works with x402 v2 endpoints. Zapper uses v1 and is currently incompatible — see Known Issues.
+
 ## Error Handling
 
 - Endpoint returns non-200 (excluding 402 payment flow): log, skip, note gap in report
-- Endpoint timeout (>10s): skip with timeout note
+- Endpoint timeout (>10s standard, >90s expensive): skip with timeout note
 - Decomposition returns capabilities with no matching endpoint: note "data unavailable" in report
 - Never let a single endpoint failure kill the entire workflow — always produce a partial report
+- Empty/null LLM params are stripped before merging with `defaultParams` (defensive merge in `client.ts`)
 
 ## CDP Wallet
 
@@ -302,39 +340,53 @@ const response = await fetchWithPayment(endpoint.url);
 - **Agent ID**: 17653
 - **Registration tx**: [0xd3b2a3...](https://basescan.org/tx/0xd3b2a333c4dcb7ffad254f4e22bf4d02d41da35b01aa98179daf236dfd9daa1f)
 - **Agent URI**: `https://parallax-agent-production.up.railway.app/.well-known/agent-registration.json`
-- **URI update tx**: [0x3103f6...](https://basescan.org/tx/0x3103f612e5741ea97d079a5940e543197a42a4d9215cb598b39639da2be9301f)
-- **8004scan**: https://www.8004scan.io/agents/base/17653
+- **Latest URI update tx**: [0x0c3d97...](https://basescan.org/tx/0x0c3d97deec86a7668443cf46afb6756756816d63fb4dc90057b604b11f84d877)
+- **8004scan**: https://www.8004scan.io/agents/base/17653 — score 57/100
 - **Agent wallet**: `0x13bE67822Ea3B51bFa477A6b73DFc2C25D12359A` (auto-set to msg.sender on register)
 - **Register new agent**: `npx tsx src/register-8004.ts`
 - **Update URI**: `npx tsx src/register-8004.ts update-uri`
+- **Registration metadata includes**: agentType ("orchestrator"), tags, categories, services (A2A, web, agentWallet), x402Support, image
 
-## Live x402 Endpoints (40 total in registry)
+## Live x402 Endpoints
 
-**Zapper** (`public.zapper.xyz`) — 17 endpoints, $0.001-0.005 each:
-- token-price, token-holders, token-balances, token-ranking, token-activity-feed
-- portfolio-totals, defi-balances, nft-balances, nft-ranking, nft-collection-metadata, nft-token-metadata
-- search, account-identity, historical-token-price, transaction-history, transaction-details
-- general-swap-feed
+### Active (24 endpoints across 6 providers)
 
 **Silverback DeFi** (`x402.silverbackdefi.app`) — 8 endpoints:
 - top-coins ($0.001), trending-tokens ($0.001), top-pools ($0.001), dex-metrics ($0.002)
 - whale-moves ($0.01), token-audit ($0.01), technical-analysis ($0.02), defi-yield ($0.02)
 
-**Neynar** (`api.neynar.com`) — 4 endpoints, $0.001 each:
-- cast-search, user-search, channel-search, feed (requires FID)
-
 **Elsa x402** (`x402-api.heyelsa.ai`) — 6 endpoints:
 - search-token ($0.001), token-price ($0.002), gas-prices ($0.001)
 - portfolio ($0.01), analyze-wallet ($0.02), yield-suggestions ($0.02)
 
-**Gloria AI** (`api.itsgloria.ai`) — 3 endpoints:
-- news ($0.03), recaps ($0.10), news-ticker-summary ($0.031)
+**Neynar** (`api.neynar.com`) — 4 endpoints, $0.001 each:
+- cast-search, user-search, channel-search, feed (requires FID)
 
-**Firecrawl** (`api.firecrawl.dev`) — 1 endpoint (currently returning 401, may be temporarily down):
-- search ($0.01)
+**Gloria AI** (`api.itsgloria.ai`) — 3 endpoints:
+- news ($0.03), recaps ($0.10, premium), news-ticker-summary ($0.031)
 
 **Einstein AI** (`emc2ai.io`) — 2 endpoints (premium, expensive):
 - latest-pairs ($0.25), smart-money-leaderboard ($0.85)
+
+**Firecrawl** (`api.firecrawl.dev`) — 1 endpoint (premium):
+- search ($0.01)
+
+### Disabled (17 Zapper endpoints — x402 v1 incompatible)
+
+All `public.zapper.xyz/x402/*` endpoints are set to `tier: "disabled"` in `registry.json`. They use x402 v1 protocol which our v2 client library can't complete payments for. Full diagnostic in commit `a9ba1ed`. Re-enable by changing tier back to `"standard"` when v1 compat is resolved.
+
+Capabilities temporarily lost: NFT data, historical token prices, ENS/Farcaster identity resolution, human-readable transaction interpretation. Core DeFi intelligence capabilities remain fully covered.
+
+## LLM Cost Tracking
+
+Pipeline uses real token counts from `generateText().usage` to calculate costs:
+- **Sonnet 4.5 pricing**: $3.00/MTok input, $15.00/MTok output, $0.30/MTok cached input
+- **Typical decomposition**: ~1900 input / ~300 output tokens → ~$0.011
+- **Typical synthesis**: ~600 input / ~900 output tokens → ~$0.015
+- **Total LLM cost per query**: ~$0.026
+- **Total with x402 endpoints**: ~$0.03-0.08 depending on tier
+
+Helper function `calculateLlmCost()` in `pipeline.ts` handles the math. Token counts logged per step.
 
 ## Lucid SDK Reference
 
@@ -362,14 +414,14 @@ const response = await fetchWithPayment(endpoint.url);
 
 ## Known Issues / Tech Debt
 
-- **Sequential endpoint execution**: Sub-tasks execute one at a time (~40s per query). Parallel execution would cut to ~10s. High-priority optimization.
+- **Zapper x402 v1 incompatible**: 17 endpoints disabled. Our `@x402/fetch` v2 library creates valid payment payloads but Zapper's v1 server rejects them on retry (returns 402 again). Set to `tier: "disabled"`. Re-enable when resolved.
 - **Memory not wired into pipeline**: Need to add save-query-result and update-endpoint-reliability calls.
-- **LLM cost estimates are hardcoded**: `$0.003` for decomposition, `$0.008` for synthesis. Should use actual token counts from AI SDK response.
 - **Endpoint registry is static**: No runtime discovery. Phase 3 will add auto-discovery.
-- **Firecrawl returning 401**: Their x402 endpoint is temporarily broken (should return 402). Keep in registry, will self-heal when they fix it.
-- **Silverback returns generic data for some queries**: Token-audit, whale-moves, technical-analysis endpoints accept `symbol` param but sometimes return general data. May need contract addresses instead of symbols.
-- **Zapper endpoints need contract addresses**: Most Zapper endpoints require `address` (token contract) + `chainId`, not ticker symbols. The decomposer should use `zapper-search` or `elsa-search-token` first to resolve.
+- **Firecrawl returning 401**: Their x402 endpoint may be temporarily broken. Keep in registry, will self-heal when they fix it.
+- **Silverback returns generic data for some queries**: Token-audit, whale-moves, technical-analysis endpoints accept `symbol` param but sometimes return general data instead of token-specific.
 - **Payment storage is in-memory**: Payment tracking resets on server restart. Switch to Postgres for persistence when needed.
+- **8004scan score 57/100**: Remaining gaps are usage-based (quality, wallet, popularity). Need real agent-to-agent transactions and feedback to improve.
+- **xgate indexing pending**: `tokenUri` set on-chain and verified, but xgate hasn't re-crawled yet. Should resolve automatically.
 - **CLI `$` escaping**: Use single quotes for queries with `$` symbols (e.g. `'Should I invest in $AERO?'`), otherwise the shell interprets `$AERO` as a variable.
 
 ## Relevant Skills
