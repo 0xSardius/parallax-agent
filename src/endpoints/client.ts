@@ -1,3 +1,11 @@
+// Fix: @x402/core's encodePaymentSignatureHeader uses JSON.stringify without a
+// BigInt replacer, but the EVM signer produces BigInt values in payment payloads.
+// This global polyfill makes BigInt JSON-serializable as strings.
+// Remove when @x402/core fixes this upstream (their toJsonSafe helper already handles it).
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
+
 import { x402Client, wrapFetchWithPayment } from "@x402/fetch";
 import { registerExactEvmScheme } from "@x402/evm/exact/client";
 import { toClientEvmSigner } from "@x402/evm";
@@ -165,65 +173,137 @@ export async function callEndpoint(
     };
   }
 
-  // Live mode — make real x402-paid HTTP requests
+  // Live mode — make real x402-paid HTTP requests with retry for concurrency issues.
+  // CDP wallet signing can fail when multiple payments are signed in parallel
+  // (nonce collisions). Retry once after a delay to let other signings complete.
+  const MAX_ATTEMPTS = 2;
+  const RETRY_DELAY_MS = 2000;
+
   const timeoutMs = endpoint.costPerCall >= 0.10 ? EXPENSIVE_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
-  try {
-    const pFetch = await initPaymentFetch();
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-    const url = new URL(endpoint.url);
-    // Defensive merge: defaultParams provide fallbacks for any keys the LLM
-    // omits or sends as empty strings. LLM params win only when non-empty.
-    const cleanedParams: Record<string, unknown> = {};
-    if (params) {
-      for (const [k, v] of Object.entries(params)) {
-        if (v !== undefined && v !== null && v !== "") {
-          cleanedParams[k] = v;
+  // Build URL and params once (reused across attempts)
+  const url = new URL(endpoint.url);
+  const cleanedParams: Record<string, unknown> = {};
+  if (params) {
+    for (const [k, v] of Object.entries(params)) {
+      if (v !== undefined && v !== null && v !== "") {
+        cleanedParams[k] = v;
+      }
+    }
+  }
+  const mergedParams = { ...endpoint.defaultParams, ...cleanedParams };
+  if (endpoint.queryParamName && endpoint.queryParamName !== "query" && "query" in mergedParams) {
+    mergedParams[endpoint.queryParamName] = mergedParams["query"];
+    delete mergedParams["query"];
+  }
+  const method = endpoint.method ?? "GET";
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const pFetch = await initPaymentFetch();
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+      let response: Response;
+      if (method === "POST") {
+        response = await pFetch(url.toString(), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(mergedParams),
+          signal: controller.signal,
+        });
+      } else {
+        const fetchUrl = new URL(url.toString());
+        for (const [key, value] of Object.entries(mergedParams)) {
+          fetchUrl.searchParams.set(key, String(value));
         }
+        response = await pFetch(fetchUrl.toString(), {
+          method: "GET",
+          signal: controller.signal,
+        });
       }
-    }
-    const mergedParams = { ...endpoint.defaultParams, ...cleanedParams };
-    // Rename "query" param to endpoint-specific name (e.g. Neynar uses "q")
-    if (endpoint.queryParamName && endpoint.queryParamName !== "query" && "query" in mergedParams) {
-      mergedParams[endpoint.queryParamName] = mergedParams["query"];
-      delete mergedParams["query"];
-    }
-    const method = endpoint.method ?? "GET";
+      clearTimeout(timeout);
 
-    let response: Response;
-    if (method === "POST") {
-      // POST endpoints receive params as JSON body
-      response = await pFetch(url.toString(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(mergedParams),
-        signal: controller.signal,
-      });
-    } else {
-      // GET endpoints receive params as query string
-      for (const [key, value] of Object.entries(mergedParams)) {
-        url.searchParams.set(key, String(value));
+      const latencyMs = Date.now() - startTime;
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+
+        // 402 after payment attempt = payment rejected (likely concurrency issue
+        // with CDP wallet signing). Retry after a jittered delay so retries
+        // don't all fire simultaneously and cause another collision.
+        if (response.status === 402 && attempt < MAX_ATTEMPTS) {
+          const jitter = Math.floor(Math.random() * 2000);
+          const delay = RETRY_DELAY_MS + jitter;
+          logInfo(`[retry] ${endpoint.id} got 402 on attempt ${attempt}, retrying in ${delay}ms...`);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+
+        const actualCost = response.status === 402 ? 0 : endpoint.costPerCall;
+        logEndpointCall({
+          endpointId: endpoint.id,
+          endpointName: endpoint.name,
+          url: url.toString(),
+          latencyMs,
+          costUsd: actualCost,
+          success: false,
+          error: `HTTP ${response.status}: ${errorText}`,
+        });
+
+        return {
+          endpointId: endpoint.id,
+          endpointName: endpoint.name,
+          capability,
+          success: false,
+          error: `HTTP ${response.status}: ${errorText}`,
+          latencyMs,
+          costUsd: actualCost,
+        };
       }
-      response = await pFetch(url.toString(), {
-        method: "GET",
-        signal: controller.signal,
-      });
-    }
-    clearTimeout(timeout);
 
-    const latencyMs = Date.now() - startTime;
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "Unknown error");
+      const data = await response.json();
       logEndpointCall({
         endpointId: endpoint.id,
         endpointName: endpoint.name,
         url: url.toString(),
         latencyMs,
         costUsd: endpoint.costPerCall,
+        success: true,
+        ...(attempt > 1 ? { retryAttempt: attempt } : {}),
+      });
+
+      return {
+        endpointId: endpoint.id,
+        endpointName: endpoint.name,
+        capability,
+        success: true,
+        data,
+        latencyMs,
+        costUsd: endpoint.costPerCall,
+      };
+    } catch (error) {
+      const latencyMs = Date.now() - startTime;
+      const errorMessage =
+        error instanceof Error
+          ? error.name === "AbortError"
+            ? `Timeout after ${timeoutMs}ms`
+            : error.message
+          : String(error);
+
+      // Diagnostic: surface x402 payment flow errors (e.g. v1/v2 mismatch)
+      if (error instanceof Error && error.stack) {
+        logError(`x402 diagnostic [${endpoint.id}]: ${error.message}\n${error.stack.split("\n").slice(0, 4).join("\n")}`);
+      }
+
+      logEndpointCall({
+        endpointId: endpoint.id,
+        endpointName: endpoint.name,
+        url: endpoint.url,
+        latencyMs,
+        costUsd: 0,
         success: false,
-        error: `HTTP ${response.status}: ${errorText}`,
+        error: errorMessage,
       });
 
       return {
@@ -231,63 +311,21 @@ export async function callEndpoint(
         endpointName: endpoint.name,
         capability,
         success: false,
-        error: `HTTP ${response.status}: ${errorText}`,
+        error: errorMessage,
         latencyMs,
-        costUsd: endpoint.costPerCall,
+        costUsd: 0,
       };
     }
-
-    const data = await response.json();
-    logEndpointCall({
-      endpointId: endpoint.id,
-      endpointName: endpoint.name,
-      url: url.toString(),
-      latencyMs,
-      costUsd: endpoint.costPerCall,
-      success: true,
-    });
-
-    return {
-      endpointId: endpoint.id,
-      endpointName: endpoint.name,
-      capability,
-      success: true,
-      data,
-      latencyMs,
-      costUsd: endpoint.costPerCall,
-    };
-  } catch (error) {
-    const latencyMs = Date.now() - startTime;
-    const errorMessage =
-      error instanceof Error
-        ? error.name === "AbortError"
-          ? `Timeout after ${timeoutMs}ms`
-          : error.message
-        : String(error);
-
-    // Diagnostic: surface x402 payment flow errors (e.g. v1/v2 mismatch)
-    if (error instanceof Error && error.stack) {
-      logError(`x402 diagnostic [${endpoint.id}]: ${error.message}\n${error.stack.split("\n").slice(0, 4).join("\n")}`);
-    }
-
-    logEndpointCall({
-      endpointId: endpoint.id,
-      endpointName: endpoint.name,
-      url: endpoint.url,
-      latencyMs,
-      costUsd: 0,
-      success: false,
-      error: errorMessage,
-    });
-
-    return {
-      endpointId: endpoint.id,
-      endpointName: endpoint.name,
-      capability,
-      success: false,
-      error: errorMessage,
-      latencyMs,
-      costUsd: 0,
-    };
   }
+
+  // Shouldn't reach here, but TypeScript needs a return
+  return {
+    endpointId: endpoint.id,
+    endpointName: endpoint.name,
+    capability,
+    success: false,
+    error: "Max retry attempts exhausted",
+    latencyMs: Date.now() - startTime,
+    costUsd: 0,
+  };
 }
