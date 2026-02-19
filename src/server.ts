@@ -36,7 +36,7 @@ const runtime = await createAgent({
         network: "eip155:8453",
         facilitatorUrl:
           process.env.FACILITATOR_URL ||
-          "https://facilitator.x402.rs",
+          "https://facilitator.payai.network",
         storage: { type: "in-memory" }, // Node.js — SQLite is Bun-only
       },
     })
