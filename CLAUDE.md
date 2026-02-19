@@ -10,7 +10,7 @@ Parallax is both a **consumer** (pays other x402 endpoints for data) and a **pro
 
 **Stack:** TypeScript (strict mode), Lucid Agents SDK, Vercel AI SDK, Hono, x402 protocol, USDC on Base, CDP Server Wallet v2
 **Deployment:** Railway (https://parallax-agent-production.up.railway.app)
-**Status:** LIVE — Phase 1.5 complete, deployed to Railway, registered on ERC-8004, real x402 payments active
+**Status:** LIVE — Phase 1.8, deployed to Railway, registered on ERC-8004, 37 active x402 endpoints across 9 providers
 
 ## RESUME HERE — Current Status
 
@@ -27,43 +27,53 @@ Parallax is both a **consumer** (pays other x402 endpoints for data) and a **pro
 - **8004scan:** https://www.8004scan.io/agents/base/17653 — metadata score 57/100, waiting for re-crawl to pick up new fields
 - **xgate:** `tokenUri` set on-chain ([tx](https://basescan.org/tx/0x0c3d97deec86a7668443cf46afb6756756816d63fb4dc90057b604b11f84d877)), waiting for indexer to crawl
 
-### Live x402 Testing (2026-02-18)
+### Live x402 Testing
 
-Pipeline tested end-to-end with **real USDC payments**. Final run: **5/6 endpoints succeeded**.
+**Latest (2026-02-18, Phase 1.8):** 3 new providers tested live — CoinGecko, Otto AI, CryptoRugMunch. All 3 working.
 
-| Provider | Endpoint | Result | Cost |
-|----------|----------|--------|------|
-| Neynar | Cast Search | SUCCESS | $0.001 |
-| Silverback | Whale Moves | SUCCESS (retry) | $0.01 |
-| Silverback | Token Audit | SUCCESS (retry) | $0.01 |
-| Silverback | Technical Analysis | SUCCESS (retry) | $0.02 |
-| Gloria AI | News | SUCCESS (retry) | $0.03 |
-| Elsa | Search Token | FAIL (524 timeout) | $0.001 |
+| Test | Query | Endpoints | Success | x402 Cost | Total Cost |
+|------|-------|-----------|---------|-----------|------------|
+| 1 | AERO safety + rug + Twitter | CoinGecko, RugMunch, Otto, Silverback, Neynar | 5/5 | $0.071 | $0.231 |
+| 2 | Contract address rug check | RugMunch, Otto, Silverback x2 | 4/4 | $0.052 | $0.114 |
+| 3 | DeFi yield + funding + macro | Silverback, Otto x3 | 3/4 | $0.040 | $0.085 |
+
+Key findings:
+- **CryptoRugMunch** returned real risk data: AERO score 37/100, $281M mcap, $18.6M liquidity, SAFE recommendation
+- **Otto funding-rates** returned cross-exchange data with Binance, HTX, MEXC rates
+- **Otto tradfi-data** connected but returned null values (their data source may be intermittent)
+- CryptoRugMunch `check-risk` needs a contract address, not a symbol — decomposer handles this correctly when given an address
+
+**Earlier (2026-02-18, Phase 1.7):** First live tests. 5/6 endpoints succeeded (only Elsa down).
 
 **Actual costs per query (live data):**
-- x402 endpoints: ~$0.07 USDC
-- LLM decomposition: ~$0.014 (1900in/500out tokens)
-- LLM synthesis: ~$0.14-0.17 (40-48K input tokens with real endpoint data)
-- **Total: ~$0.22-0.26 per query**
-
-Note: Synthesis is the biggest cost driver. Real endpoint data (especially Neynar Farcaster casts) can be 40K+ tokens. The $0.25 charge to callers provides thin margin — consider raising price or truncating verbose endpoint responses before synthesis.
+- x402 endpoints: ~$0.04-0.07 USDC (varies by query)
+- LLM decomposition: ~$0.013 (1900in/500out tokens)
+- LLM synthesis: ~$0.03-0.17 (varies by response verbosity — Neynar data is 40K+ tokens)
+- **Total: ~$0.08-0.26 per query** (depends on which endpoints are called)
 
 ### Wallet Balances
-- **CDP Wallet:** `0x13bE67822Ea3B51bFa477A6b73DFc2C25D12359A` — ~$7.50 USDC + ~$2 ETH (as of 2026-02-18)
+- **CDP Wallet:** `0x13bE67822Ea3B51bFa477A6b73DFc2C25D12359A` — ~$7.34 USDC + ETH (as of 2026-02-18, after 7 live tests)
 - **Self-funding model:** Incoming x402 payments go to CDP wallet, same wallet pays outgoing endpoint calls. Margin accumulates. Sweep profits periodically via CDP SDK.
 - Check balance: `npx tsx src/check-balance.ts`
 
 ### What's Done (2026-02-18 session)
 
-**Live x402 payment fixes:**
-- **BigInt serialization fix** — `@x402/core`'s `encodePaymentSignatureHeader` uses raw `JSON.stringify` which crashes on BigInt values from the EVM signer. Added global `BigInt.prototype.toJSON` polyfill in `client.ts`. Remove when upstream fixes this.
-- **Retry with jittered backoff** — CDP wallet signing fails when multiple payments are signed concurrently (nonce collisions). Added retry loop: on 402 after payment attempt, wait 2-4s (random jitter) and retry once. Jitter prevents retries from colliding with each other. Improved success rate from 2/6 → 5/6.
-- **Cost accounting fix** — Failed 402 responses (payment rejected) no longer report `costPerCall` since USDC was never spent on-chain. Only successful responses record cost.
-- **Gloria param name fix** — Server expects `feed_categories` not `categories`. Updated defaultParams to `"feed_categories": "crypto,defi,base"` for both gloria-news and gloria-recaps.
+**New endpoint providers (Phase 1.8):**
+- **CoinGecko x402** (3 endpoints) — simple-price, trending-pools, search-pools. All $0.01/call. Fills the token_price and token_search gaps left by Elsa being down.
+- **Otto AI** (6 endpoints) — twitter-summary, token-details, funding-rates, token-security, tradfi-data ($0.01 each), kol-sentiment ($0.05 premium). Fills the **Twitter/X sentiment gap** and adds new capabilities: funding rates, TradFi macro data, KOL sentiment.
+- **CryptoRugMunch** (4 endpoints) — check-risk ($0.04), token-intel ($0.06), market-risk ($0.02), scammer-check ($0.005). Adds completely new **rug detection** and **scammer detection** capabilities.
+- **Path parameter substitution** — Added `{param}` template support in `client.ts` for endpoints like CoinGecko (`{network}`) and CryptoRugMunch (`{token_address}`).
+- **6 new capability types** — twitter_sentiment, funding_rates, tradfi_data, kol_sentiment, rug_detection, scammer_detection.
+
+**Live x402 payment fixes (Phase 1.7):**
+- **BigInt serialization fix** — Global `BigInt.prototype.toJSON` polyfill in `client.ts` for `@x402/core` bug.
+- **Retry with jittered backoff** — 2-4s random delay on 402 after payment. Improved success rate from 2/6 → 5/6.
+- **Cost accounting fix** — Failed 402 responses report $0 cost.
+- **Gloria param name fix** — `feed_categories` not `categories`.
 
 **Prompt tuning:**
-- **Decomposition** — Added rule against overlapping capabilities, enforced concise param values, prefer direct-answer capabilities over tangential data.
-- **Synthesis** — Decisive analyst tone ("briefing a trader"), explicit fact vs. inference labels, data gaps ranked by impact (HIGH/MEDIUM/LOW), new "What To Do Next" section with concrete action items, cross-signal validation across data sources.
+- **Decomposition** — Overlap avoidance, concise param values, prefer direct-answer capabilities.
+- **Synthesis** — Analyst tone, fact/inference labels, ranked data gaps, "What To Do Next" section.
 
 **Previous session (2026-02-17):**
 - Parallel endpoint execution (`Promise.allSettled`), real LLM cost tracking, defensive param merge, x402 diagnostic logging
@@ -77,20 +87,21 @@ Note: Synthesis is the biggest cost driver. Real endpoint data (especially Neyna
 ### Next Session — Ready to Action
 
 **1. Reduce synthesis cost** (high impact on margin)
-- Synthesis eats ~$0.14-0.17 per query because Neynar returns 40K+ tokens of raw Farcaster casts
+- Synthesis eats ~$0.03-0.17 per query depending on endpoint verbosity (Neynar is 40K+ tokens)
 - Fix: truncate/summarize verbose endpoint responses before passing to synthesis prompt
-- Target: cap endpoint data at ~5K tokens total → synthesis cost drops to ~$0.03-0.05
+- Target: cap endpoint data at ~5K tokens total → synthesis cost drops to ~$0.03-0.05 consistently
 - This turns the $0.25 charge from thin margin into ~3-4x markup
 
-**2. Elsa investigation** (medium impact)
-- All 6 Elsa endpoints consistently return 524 (Cloudflare timeout) — their server is down
-- 4 capabilities are unique to Elsa: `token_search`, `token_price`, `wallet_analysis`, `gas_data`
-- For token-specific queries, missing price data is a real gap (synthesis notes it, confidence drops)
-- Options: wait for Elsa to recover, find alternative providers on xgate, or build custom endpoints
+**2. Deploy new endpoints to Railway** (quick, needed)
+- The 13 new endpoints (CoinGecko, Otto, RugMunch) are only in local code
+- Run `railway up --detach` to deploy, then test a production invoke
 
-**3. Daydreams Router integration** (15 min, medium impact)
-- Install `@daydreamsai/ai-sdk-provider`, change 2 lines in `pipeline.ts`
-- Benefits: unified USDC billing (no API keys), provider fallback, ecosystem visibility
+**3. Elsa alternatives** (mostly resolved)
+- `token_search` → now covered by CoinGecko search-pools
+- `token_price` → now covered by CoinGecko simple-price + Otto token-details
+- `wallet_analysis` → still no alternative (Zapper has it but is disabled/v1)
+- `gas_data` → still no alternative
+- Consider: re-check if Elsa has recovered, or keep disabled
 
 **4. Chat UI (Phase 2)** (high impact)
 - Next.js frontend opens Parallax to humans, not just agents
@@ -99,29 +110,35 @@ Note: Synthesis is the biggest cost driver. Real endpoint data (especially Neyna
 **5. Farcaster/Telegram bot** (medium impact)
 - Lower friction entry point for building initial usage and reputation
 
+**6. Daydreams Router integration** (low priority now)
+- Install `@daydreamsai/ai-sdk-provider`, change 2 lines in `pipeline.ts`
+- Benefits: unified USDC billing (no API keys), provider fallback
+
 ### Full Roadmap (prioritized)
 
 **High impact:**
 1. ~~Parallel endpoint execution~~ — DONE
 2. ~~Prompt tuning~~ — DONE (analyst tone, fact/inference, ranked gaps, action items)
 3. ~~Live x402 payments~~ — DONE (5/6 success, retry with jitter)
-4. **Reduce synthesis cost** — Truncate verbose endpoint data before synthesis
-5. **Chat UI (Phase 2)** — Next.js frontend
-6. **Daydreams Router** — USDC-native LLM calls, no API keys
+4. ~~Expand endpoint coverage~~ — DONE (CoinGecko, Otto AI, CryptoRugMunch — 13 new endpoints)
+5. **Reduce synthesis cost** — Truncate verbose endpoint data before synthesis
+6. **Deploy new endpoints to Railway** — Push Phase 1.8 to production
+7. **Chat UI (Phase 2)** — Next.js frontend
 
 **Medium impact:**
-7. **Elsa alternatives** — Find/build replacements for token_price, token_search, wallet_analysis
-8. **Streaming responses** — Return partial results as they arrive
-9. **Postgres payment storage** — Replace in-memory storage for persistence
-10. **Memory integration** — Save query results, track endpoint reliability
-11. **Farcaster/Telegram bot** — Lower friction entry point
-12. **Profit sweep script** — Transfer excess USDC from CDP wallet
+8. ~~Elsa alternatives~~ — MOSTLY DONE (token_price + token_search covered by CoinGecko/Otto; wallet_analysis + gas_data still missing)
+9. **Streaming responses** — Return partial results as they arrive
+10. **Postgres payment storage** — Replace in-memory storage for persistence
+11. **Memory integration** — Save query results, track endpoint reliability
+12. **Farcaster/Telegram bot** — Lower friction entry point
+13. **Profit sweep script** — Transfer excess USDC from CDP wallet
 
 **Lower priority:**
-13. **Re-enable Zapper** — When x402 v1 compat is resolved or Zapper upgrades to v2
-14. **TEE migration** — Deploy to Phala Network for TEE badge on 8004scan
-15. **IPFS-pinned metadata** — Content-addressed agentURI for trust bump
-16. **Error edge cases** — Test: all endpoints fail, no matching endpoints, malformed LLM output
+14. **Daydreams Router** — USDC-native LLM calls, no API keys
+15. **Re-enable Zapper** — When x402 v1 compat is resolved or Zapper upgrades to v2
+16. **TEE migration** — Deploy to Phala Network for TEE badge on 8004scan
+17. **IPFS-pinned metadata** — Content-addressed agentURI for trust bump
+18. **Error edge cases** — Test: all endpoints fail, no matching endpoints, malformed LLM output
 
 ## Build Progress
 
@@ -167,6 +184,17 @@ Core pipeline works end-to-end in mock mode and with real Anthropic API.
 | 6 | Prompt tuning: synthesis (tone, fact/inference, gaps, actions) | Done |
 | 7 | Live x402 test: 5/6 success rate | Done |
 
+### Phase 1.8 — COMPLETE (Endpoint Expansion)
+
+| Step | What | Status |
+|------|------|--------|
+| 1 | Add URL path parameter substitution to client.ts | Done |
+| 2 | Add CoinGecko x402 endpoints (3: simple-price, trending-pools, search-pools) | Done |
+| 3 | Add Otto AI endpoints (6: twitter-summary, token-details, funding-rates, token-security, tradfi-data, kol-sentiment) | Done |
+| 4 | Add CryptoRugMunch endpoints (4: check-risk, token-intel, market-risk, scammer-check) | Done |
+| 5 | Add mock responses for 6 new capability types | Done |
+| 6 | Live test all 3 providers (3 queries, 12/13 calls succeeded) | Done |
+
 ### Phase 2 — Chat UI (upcoming)
 - Next.js chat interface with Vercel AI SDK (`useChat` hooks)
 - Streaming report output via Lucid SSE
@@ -200,8 +228,8 @@ src/
 │   └── contexts/
 │       └── registry.ts           # Endpoint registry — load, search by capability (pure functions)
 ├── endpoints/
-│   ├── registry.json             # 41 x402 endpoints (24 active, 17 Zapper disabled)
-│   └── client.ts                 # x402 HTTP client (mock mode, CDP wallet, retry+jitter, BigInt fix)
+│   ├── registry.json             # 54 x402 endpoints (37 active, 17 Zapper disabled)
+│   └── client.ts                 # x402 HTTP client (mock mode, CDP wallet, retry+jitter, BigInt fix, path params)
 ├── prompts/
 │   ├── decompose.ts              # Decomposition prompt template (includes paramHints)
 │   └── synthesize.ts             # Synthesis prompt template
@@ -227,9 +255,9 @@ Routes:
 
 **Payment flow:**
 ```
-Caller pays $0.25 USDC → CDP wallet → spends ~$0.22-0.26 on x402 + LLM → thin margin
+Caller pays $0.25 USDC → CDP wallet → spends ~$0.08-0.26 on x402 + LLM → variable margin
 ```
-**Margin warning:** At current synthesis costs (~$0.15-0.17 with verbose endpoint data), the $0.25 price barely covers costs. Priority fix: truncate endpoint data before synthesis to reduce LLM input tokens.
+**Margin note:** Cost varies significantly by query type. Simple queries (no Neynar) cost ~$0.08-0.12, giving healthy 2-3x margin. Neynar-heavy queries cost ~$0.22-0.26 (thin margin). Priority fix: truncate verbose endpoint data before synthesis.
 
 ## Build & Run Commands
 
@@ -370,21 +398,35 @@ const response = await fetchWithPayment(endpoint.url);
 
 ## Live x402 Endpoints
 
-### Active (24 endpoints across 6 providers)
+### Active (37 endpoints across 9 providers)
 
 **Silverback DeFi** (`x402.silverbackdefi.app`) — 8 endpoints:
 - top-coins ($0.001), trending-tokens ($0.001), top-pools ($0.001), dex-metrics ($0.002)
 - whale-moves ($0.01), token-audit ($0.01), technical-analysis ($0.02), defi-yield ($0.02)
 
-**Elsa x402** (`x402-api.heyelsa.ai`) — 6 endpoints:
-- search-token ($0.001), token-price ($0.002), gas-prices ($0.001)
-- portfolio ($0.01), analyze-wallet ($0.02), yield-suggestions ($0.02)
+**CoinGecko x402** (`pro-api.coingecko.com`) — 3 endpoints, $0.01 each:
+- simple-price (by symbol), trending-pools (by network, uses path params), search-pools (by query)
+- Fills token_price and token_search gaps left by Elsa being down
+
+**Otto AI** (`x402.ottoai.services`) — 6 endpoints:
+- twitter-summary ($0.01), token-details ($0.01), funding-rates ($0.01), token-security ($0.01), tradfi-data ($0.01)
+- kol-sentiment ($0.05, premium) — Top 50 KOL analysis
+- New capabilities: twitter_sentiment, funding_rates, tradfi_data, kol_sentiment
+
+**CryptoRugMunch** (`cryptorugmunch.app`) — 4 endpoints:
+- check-risk ($0.04, POST), token-intel ($0.06, path params), market-risk ($0.02), scammer-check ($0.005, path params)
+- New capabilities: rug_detection, scammer_detection
 
 **Neynar** (`api.neynar.com`) — 4 endpoints, $0.001 each:
 - cast-search, user-search, channel-search, feed (requires FID)
 
 **Gloria AI** (`api.itsgloria.ai`) — 3 endpoints:
 - news ($0.03), recaps ($0.10, premium), news-ticker-summary ($0.031)
+
+**Elsa x402** (`x402-api.heyelsa.ai`) — 6 endpoints (currently DOWN — 524 timeout):
+- search-token ($0.001), token-price ($0.002), gas-prices ($0.001)
+- portfolio ($0.01), analyze-wallet ($0.02), yield-suggestions ($0.02)
+- Most unique capabilities now covered by CoinGecko/Otto; wallet_analysis and gas_data still exclusive
 
 **Einstein AI** (`emc2ai.io`) — 2 endpoints (premium, expensive):
 - latest-pairs ($0.25), smart-money-leaderboard ($0.85)
@@ -400,14 +442,19 @@ Capabilities temporarily lost: NFT data, historical token prices, ENS/Farcaster 
 
 ### Capability Gaps to Explore
 
-These are genuinely missing capabilities with no x402 provider available yet. Watch for new endpoints on xgate or build custom integrations.
+Remaining gaps after Phase 1.8 expansion. Several previously-missing capabilities are now covered.
 
 | Gap | Impact | Notes |
 |-----|--------|-------|
-| **Twitter/X sentiment** | High | Crypto Twitter is where most alpha/FUD originates. Only have Farcaster via Neynar. No x402 provider exists yet. |
-| **Protocol revenue/TVL tracking** | Medium | DefiLlama-style data. Silverback has DEX metrics but not protocol-level revenue, fees, or TVL history. |
-| **On-chain governance** | Medium | DAO proposals, votes, quorum status. Relevant for protocol health assessment. |
-| **Token holder distribution** | Medium | Holder counts, concentration metrics, Gini coefficient. Zapper had partial coverage. |
+| ~~**Twitter/X sentiment**~~ | ~~High~~ | **FILLED** — Otto AI twitter-summary + kol-sentiment |
+| ~~**Token price by symbol**~~ | ~~High~~ | **FILLED** — CoinGecko simple-price + Otto token-details (Elsa replacement) |
+| ~~**Rug detection**~~ | ~~High~~ | **FILLED** — CryptoRugMunch check-risk, token-intel, market-risk, scammer-check |
+| ~~**Funding rates**~~ | ~~Medium~~ | **FILLED** — Otto AI funding-rates (cross-exchange perps data) |
+| ~~**TradFi macro**~~ | ~~Medium~~ | **FILLED** — Otto AI tradfi-data (S&P, VIX, DXY, yields) |
+| **Wallet analysis** | Medium | Deep wallet profiling (PnL, risk score, diversification). Elsa had this but is down. Zapper has it but is disabled (v1). |
+| **Gas prices** | Low-Medium | Current gas across networks. Elsa had this but is down. Not critical for intelligence queries. |
+| **Protocol revenue/TVL tracking** | Medium | DefiLlama-style data. Otto defi-analytics provides some coverage. |
+| **On-chain governance** | Medium | DAO proposals, votes, quorum status. No x402 provider exists yet. |
 | **Historical price data** | Low-Medium | Can't answer "how has X performed over 30 days?" Zapper had this. |
 | **NFT data** | Low | Collection stats, floor prices, holder analysis. Zapper had this. Not critical for DeFi intelligence. |
 
@@ -419,7 +466,7 @@ Pipeline uses real token counts from `generateText().usage` to calculate costs:
 - **Synthesis (mock data)**: ~600 input / ~900 output → ~$0.015
 - **Synthesis (live data)**: ~40,000-48,000 input / ~1,500 output → ~$0.14-0.17
 - **Total per query (mock)**: ~$0.03
-- **Total per query (live)**: ~$0.22-0.26 (x402 ~$0.07 + LLM ~$0.19)
+- **Total per query (live)**: ~$0.08-0.26 (varies: simple queries ~$0.08, Neynar-heavy queries ~$0.26)
 
 **Why synthesis is expensive live:** Real endpoint data is verbose. Neynar returns full Farcaster cast objects (author, text, reactions, timestamps) — a single query can produce 40K+ tokens of raw data. This is the #1 cost optimization target: truncating endpoint responses before synthesis could cut LLM cost 3-5x.
 
@@ -451,13 +498,14 @@ Helper function `calculateLlmCost()` in `pipeline.ts` handles the math. Token co
 
 ## Known Issues / Tech Debt
 
-- **Elsa x402 server down**: All 6 Elsa endpoints return 524 (Cloudflare timeout). 4 capabilities are unique to Elsa (`token_search`, `token_price`, `wallet_analysis`, `gas_data`) with no alternative provider. Reports still work but miss price data for token-specific queries. Monitor for recovery.
+- **Elsa x402 server down**: All 6 Elsa endpoints return 524 (Cloudflare timeout). Most capabilities now covered by alternatives: `token_search` → CoinGecko search-pools, `token_price` → CoinGecko simple-price / Otto token-details. Still missing: `wallet_analysis` and `gas_data`. Monitor for recovery.
 - **BigInt.prototype.toJSON polyfill**: Global monkey-patch in `client.ts` to fix `@x402/core`'s `encodePaymentSignatureHeader`. Remove when upstream fixes this (they already have a `toJsonSafe` helper that handles it, just not in the standalone function).
 - **CDP wallet concurrency limit**: Parallel x402 payment signing causes nonce collisions. Mitigated with retry + jitter (2-4s random delay), but still adds latency. Root fix would be a signing queue or upstream CDP SDK fix.
 - **Synthesis cost is high with live data**: Real endpoint responses (especially Neynar) can be 40K+ tokens. Synthesis costs ~$0.14-0.17 per query. Need to truncate/summarize endpoint data before passing to synthesis prompt.
 - **Zapper x402 v1 incompatible**: 17 endpoints disabled. Set to `tier: "disabled"`. Re-enable when v1 compat resolved.
 - **Memory not wired into pipeline**: Need to add save-query-result and update-endpoint-reliability calls.
 - **Endpoint registry is static**: No runtime discovery. Phase 3 will add auto-discovery.
+- **Otto tradfi-data returning nulls**: Endpoint accepts payment but returns null values for all fields. Their data source may be intermittent. Keep in registry — will self-heal.
 - **Firecrawl returning 401**: Their x402 endpoint may be temporarily broken. Keep in registry, will self-heal when they fix it.
 - **Payment storage is in-memory**: Payment tracking resets on server restart. Switch to Postgres for persistence when needed.
 - **8004scan score 57/100**: Remaining gaps are usage-based (quality, wallet, popularity). Need real agent-to-agent transactions and feedback to improve.
