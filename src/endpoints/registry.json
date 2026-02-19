@@ -630,5 +630,210 @@
     "paramHints": "hash (required: 0x transaction hash), chainId (required: chain ID where the transaction occurred)",
     "method": "POST",
     "tier": "disabled"
+  },
+  {
+    "id": "coingecko-simple-price",
+    "name": "CoinGecko x402 — Simple Price",
+    "url": "https://pro-api.coingecko.com/api/v3/x402/simple/price",
+    "capabilities": [
+      "token_price",
+      "market_data"
+    ],
+    "costPerCall": 0.01,
+    "reliability": 0.9,
+    "description": "Token price by symbol with market cap, 24h change, and volume. Supports multiple tokens comma-separated.",
+    "defaultParams": {
+      "vs_currencies": "usd",
+      "include_24hr_change": "true",
+      "include_market_cap": "true",
+      "include_24hr_vol": "true"
+    },
+    "paramHints": "symbols (required: comma-separated tickers e.g. 'aero' or 'btc,eth,aero'). Always lowercase.",
+    "tier": "standard"
+  },
+  {
+    "id": "coingecko-trending-pools",
+    "name": "CoinGecko x402 — Trending Pools",
+    "url": "https://pro-api.coingecko.com/api/v3/x402/onchain/networks/{network}/trending_pools",
+    "capabilities": [
+      "trending",
+      "yield_data"
+    ],
+    "costPerCall": 0.01,
+    "reliability": 0.9,
+    "description": "Trending liquidity pools on a specific network by volume and activity",
+    "defaultParams": {
+      "network": "base",
+      "include": "base_token,quote_token,dex"
+    },
+    "paramHints": "network (default: 'base'. Options: 'base', 'eth', 'solana', 'bsc', 'polygon_pos', 'arbitrum')",
+    "tier": "standard"
+  },
+  {
+    "id": "coingecko-search-pools",
+    "name": "CoinGecko x402 — Search Pools",
+    "url": "https://pro-api.coingecko.com/api/v3/x402/onchain/search/pools",
+    "capabilities": [
+      "token_search",
+      "yield_data"
+    ],
+    "costPerCall": 0.01,
+    "reliability": 0.9,
+    "description": "Search liquidity pools by token symbol, address, or pool address across networks",
+    "defaultParams": {
+      "network": "base",
+      "include": "base_token,quote_token,dex"
+    },
+    "queryParamName": "query",
+    "paramHints": "query (required: token symbol or address e.g. 'AERO'), network (default: 'base')",
+    "tier": "standard"
+  },
+  {
+    "id": "otto-twitter-summary",
+    "name": "Otto AI — Twitter Summary",
+    "url": "https://x402.ottoai.services/twitter-summary",
+    "capabilities": [
+      "twitter_sentiment",
+      "social_data"
+    ],
+    "costPerCall": 0.01,
+    "reliability": 0.85,
+    "description": "Twitter/X crypto sentiment summary from key opinion leaders and trending discussions",
+    "paramHints": "No parameters needed. Returns latest Twitter/X crypto sentiment overview.",
+    "tier": "standard"
+  },
+  {
+    "id": "otto-token-details",
+    "name": "Otto AI — Token Details",
+    "url": "https://x402.ottoai.services/token-details",
+    "capabilities": [
+      "token_price",
+      "token_analysis"
+    ],
+    "costPerCall": 0.01,
+    "reliability": 0.85,
+    "description": "Token price, market data, and analysis by symbol",
+    "paramHints": "symbol (required: token ticker e.g. 'SOL', 'ETH', 'AERO')",
+    "tier": "standard"
+  },
+  {
+    "id": "otto-funding-rates",
+    "name": "Otto AI — Funding Rates",
+    "url": "https://x402.ottoai.services/funding-rates",
+    "capabilities": [
+      "funding_rates",
+      "market_data"
+    ],
+    "costPerCall": 0.01,
+    "reliability": 0.85,
+    "description": "Cross-exchange perpetual funding rates and whale positioning data",
+    "paramHints": "symbol (optional: ticker e.g. 'BTC'. Omit for market-wide overview)",
+    "tier": "standard"
+  },
+  {
+    "id": "otto-token-security",
+    "name": "Otto AI — Token Security",
+    "url": "https://x402.ottoai.services/token-security",
+    "capabilities": [
+      "token_security",
+      "risk_intelligence"
+    ],
+    "costPerCall": 0.01,
+    "reliability": 0.85,
+    "description": "Token contract security analysis: honeypot, tax, ownership risks",
+    "defaultParams": {
+      "chain": "8453"
+    },
+    "paramHints": "address (required: 0x token contract address), chain (optional: chain ID, default '8453' for Base. Options: '1' Ethereum, '56' BSC, '137' Polygon, '42161' Arbitrum, '8453' Base)",
+    "tier": "standard"
+  },
+  {
+    "id": "otto-tradfi-data",
+    "name": "Otto AI — TradFi Data",
+    "url": "https://x402.ottoai.services/tradfi-data",
+    "capabilities": [
+      "tradfi_data",
+      "market_data"
+    ],
+    "costPerCall": 0.01,
+    "reliability": 0.85,
+    "description": "Traditional finance macro dashboard: S&P 500, VIX, DXY, treasury yields, stock data",
+    "paramHints": "symbol (optional: stock ticker e.g. 'AAPL', '^GSPC'. Omit for macro overview with indices, VIX, DXY, yields)",
+    "tier": "standard"
+  },
+  {
+    "id": "otto-kol-sentiment",
+    "name": "Otto AI — KOL Sentiment",
+    "url": "https://x402.ottoai.services/kol-sentiment",
+    "capabilities": [
+      "kol_sentiment",
+      "social_data"
+    ],
+    "costPerCall": 0.05,
+    "reliability": 0.85,
+    "description": "Top 50 crypto Key Opinion Leader sentiment analysis from Twitter/X",
+    "paramHints": "No parameters needed. Returns top KOL positions and sentiment.",
+    "tier": "premium"
+  },
+  {
+    "id": "rugmunch-check-risk",
+    "name": "CryptoRugMunch — Risk Check",
+    "url": "https://cryptorugmunch.app/api/agent/v1/check-risk",
+    "capabilities": [
+      "rug_detection",
+      "risk_intelligence"
+    ],
+    "costPerCall": 0.04,
+    "reliability": 0.9,
+    "description": "Token rug pull risk score (0-100), honeypot detection, deployer history, SAFE/CAUTION/AVOID recommendation",
+    "defaultParams": {
+      "chain": "base",
+      "mode": "standard"
+    },
+    "paramHints": "token_address (required: contract address), chain (default: 'base'. Options: 'solana', 'ethereum', 'base', 'arbitrum', 'polygon', 'optimism', 'avalanche'), mode (optional: 'fast', 'standard', 'deep')",
+    "method": "POST",
+    "tier": "standard"
+  },
+  {
+    "id": "rugmunch-token-intel",
+    "name": "CryptoRugMunch — Token Intelligence",
+    "url": "https://cryptorugmunch.app/api/agent/v1/token-intel/{token_address}",
+    "capabilities": [
+      "token_analysis",
+      "risk_intelligence"
+    ],
+    "costPerCall": 0.06,
+    "reliability": 0.9,
+    "description": "Complete token profile: price, volume, market cap, holder stats, LP lock status, buy/sell ratios, top holders",
+    "paramHints": "token_address (required: contract address in URL path)",
+    "tier": "standard"
+  },
+  {
+    "id": "rugmunch-market-risk",
+    "name": "CryptoRugMunch — Market Risk Index",
+    "url": "https://cryptorugmunch.app/api/agent/v1/market-risk",
+    "capabilities": [
+      "market_risk",
+      "risk_intelligence"
+    ],
+    "costPerCall": 0.02,
+    "reliability": 0.9,
+    "description": "Daily composite rug pull risk index (0-100): high-risk token ratio, rug velocity, liquidity drains, deployer activity",
+    "paramHints": "No parameters needed. Returns daily market-wide rug risk score.",
+    "tier": "standard"
+  },
+  {
+    "id": "rugmunch-scammer-check",
+    "name": "CryptoRugMunch — Scammer Check",
+    "url": "https://cryptorugmunch.app/api/agent/v1/scammer-check/{wallet_address}",
+    "capabilities": [
+      "scammer_detection",
+      "risk_intelligence"
+    ],
+    "costPerCall": 0.005,
+    "reliability": 0.9,
+    "description": "Cross-reference a wallet address against known scammer intelligence database",
+    "paramHints": "wallet_address (required: 0x wallet address in URL path)",
+    "tier": "standard"
   }
 ]

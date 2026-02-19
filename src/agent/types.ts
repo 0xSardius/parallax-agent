@@ -5,7 +5,7 @@ import { z } from "zod";
 export const X402EndpointSchema = z.object({
   id: z.string(),
   name: z.string(),
-  url: z.string().url(),
+  url: z.string(), // May contain {param} path templates
   capabilities: z.array(z.string()),
   costPerCall: z.number().positive(),
   reliability: z.number().min(0).max(1),

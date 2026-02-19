@@ -100,6 +100,24 @@ const MOCK_RESPONSES: Record<string, unknown> = {
   "smart_money_leaderboard": {
     data: { topTraders: [{ address: "0xabc...", pnl30d: "+$2.1M", winRate: "72%", topHolding: "AERO" }] },
   },
+  "twitter_sentiment": {
+    data: { topTrends: ["$AERO bullish momentum", "Base DeFi growth"], sentiment: "positive", volume: "high" },
+  },
+  "funding_rates": {
+    data: { btcFunding: 0.0045, ethFunding: 0.0032, trend: "bullish", openInterest: "$45B" },
+  },
+  "tradfi_data": {
+    data: { sp500: "+0.8%", vix: 14.2, dxy: 103.5, us10y: "4.25%", trend: "risk-on" },
+  },
+  "kol_sentiment": {
+    data: { topKols: [{ name: "Analyst1", sentiment: "bullish", tokens: ["AERO", "ETH"] }], consensus: "moderately bullish" },
+  },
+  "rug_detection": {
+    data: { riskScore: 22, honeypot: false, recommendation: "SAFE", riskFactors: [] },
+  },
+  "scammer_detection": {
+    data: { isKnownScammer: false, riskLevel: "low", associatedScams: 0 },
+  },
 };
 
 let paymentFetch: typeof fetch | null = null;
@@ -182,7 +200,6 @@ export async function callEndpoint(
   const timeoutMs = endpoint.costPerCall >= 0.10 ? EXPENSIVE_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
 
   // Build URL and params once (reused across attempts)
-  const url = new URL(endpoint.url);
   const cleanedParams: Record<string, unknown> = {};
   if (params) {
     for (const [k, v] of Object.entries(params)) {
@@ -196,6 +213,17 @@ export async function callEndpoint(
     mergedParams[endpoint.queryParamName] = mergedParams["query"];
     delete mergedParams["query"];
   }
+
+  // Substitute path parameters (e.g. {network}, {address}) in URL template
+  const baseUrl = endpoint.url.replace(/\{(\w+)\}/g, (_match, paramName) => {
+    if (paramName in mergedParams) {
+      const value = String(mergedParams[paramName]);
+      delete mergedParams[paramName];
+      return encodeURIComponent(value);
+    }
+    return `{${paramName}}`;
+  });
+
   const method = endpoint.method ?? "GET";
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -206,14 +234,14 @@ export async function callEndpoint(
 
       let response: Response;
       if (method === "POST") {
-        response = await pFetch(url.toString(), {
+        response = await pFetch(baseUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(mergedParams),
           signal: controller.signal,
         });
       } else {
-        const fetchUrl = new URL(url.toString());
+        const fetchUrl = new URL(baseUrl);
         for (const [key, value] of Object.entries(mergedParams)) {
           fetchUrl.searchParams.set(key, String(value));
         }
@@ -244,7 +272,7 @@ export async function callEndpoint(
         logEndpointCall({
           endpointId: endpoint.id,
           endpointName: endpoint.name,
-          url: url.toString(),
+          url: baseUrl,
           latencyMs,
           costUsd: actualCost,
           success: false,
@@ -266,7 +294,7 @@ export async function callEndpoint(
       logEndpointCall({
         endpointId: endpoint.id,
         endpointName: endpoint.name,
-        url: url.toString(),
+        url: baseUrl,
         latencyMs,
         costUsd: endpoint.costPerCall,
         success: true,
