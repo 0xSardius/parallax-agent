@@ -27,93 +27,101 @@ Parallax is both a **consumer** (pays other x402 endpoints for data) and a **pro
 - **8004scan:** https://www.8004scan.io/agents/base/17653 — metadata score 57/100, waiting for re-crawl to pick up new fields
 - **xgate:** `tokenUri` set on-chain ([tx](https://basescan.org/tx/0x0c3d97deec86a7668443cf46afb6756756816d63fb4dc90057b604b11f84d877)), waiting for indexer to crawl
 
-### Live-tested (2026-02-17)
-- AERO investment query: 5/6 endpoints succeeded, real Farcaster social data, protocol revenue analysis
-- Yield opportunities query: 4/4 succeeded in mock, 3/4 live, specific pool recommendations with APRs
-- Reports include confidence scoring (15-75/100), data gaps, and risk analysis
-- Actual LLM cost per query: ~$0.026 (decomposition ~$0.011 + synthesis ~$0.015)
-- Actual x402 cost per query: ~$0.005-0.05 depending on endpoints selected
+### Live x402 Testing (2026-02-18)
+
+Pipeline tested end-to-end with **real USDC payments**. Final run: **5/6 endpoints succeeded**.
+
+| Provider | Endpoint | Result | Cost |
+|----------|----------|--------|------|
+| Neynar | Cast Search | SUCCESS | $0.001 |
+| Silverback | Whale Moves | SUCCESS (retry) | $0.01 |
+| Silverback | Token Audit | SUCCESS (retry) | $0.01 |
+| Silverback | Technical Analysis | SUCCESS (retry) | $0.02 |
+| Gloria AI | News | SUCCESS (retry) | $0.03 |
+| Elsa | Search Token | FAIL (524 timeout) | $0.001 |
+
+**Actual costs per query (live data):**
+- x402 endpoints: ~$0.07 USDC
+- LLM decomposition: ~$0.014 (1900in/500out tokens)
+- LLM synthesis: ~$0.14-0.17 (40-48K input tokens with real endpoint data)
+- **Total: ~$0.22-0.26 per query**
+
+Note: Synthesis is the biggest cost driver. Real endpoint data (especially Neynar Farcaster casts) can be 40K+ tokens. The $0.25 charge to callers provides thin margin — consider raising price or truncating verbose endpoint responses before synthesis.
 
 ### Wallet Balances
-- **CDP Wallet:** `0x13bE67822Ea3B51bFa477A6b73DFc2C25D12359A` — ~$7.98 USDC + ~$2 ETH (for gas)
+- **CDP Wallet:** `0x13bE67822Ea3B51bFa477A6b73DFc2C25D12359A` — ~$7.50 USDC + ~$2 ETH (as of 2026-02-18)
 - **Self-funding model:** Incoming x402 payments go to CDP wallet, same wallet pays outgoing endpoint calls. Margin accumulates. Sweep profits periodically via CDP SDK.
 - Check balance: `npx tsx src/check-balance.ts`
 
-### What's Done (2026-02-17 session)
+### What's Done (2026-02-18 session)
 
-**Reliability improvements:**
-- **Parallel endpoint execution** — `Promise.allSettled` replaces sequential loop. Endpoint phase ~4s instead of ~12s.
-- **Real LLM cost tracking** — Token-based pricing from `generateText().usage` instead of hardcoded estimates. Sonnet 4.5: $3/MTok input, $15/MTok output.
-- **Defensive param merge** — Strip empty/null LLM params before merging with `defaultParams`. Fixes Gloria News + protects all endpoints.
-- **x402 diagnostic logging** — Stack trace in catch block for debugging payment flow errors.
-- **Gloria paramHints updated** — Changed "optional" → "required" with valid values enumerated.
+**Live x402 payment fixes:**
+- **BigInt serialization fix** — `@x402/core`'s `encodePaymentSignatureHeader` uses raw `JSON.stringify` which crashes on BigInt values from the EVM signer. Added global `BigInt.prototype.toJSON` polyfill in `client.ts`. Remove when upstream fixes this.
+- **Retry with jittered backoff** — CDP wallet signing fails when multiple payments are signed concurrently (nonce collisions). Added retry loop: on 402 after payment attempt, wait 2-4s (random jitter) and retry once. Jitter prevents retries from colliding with each other. Improved success rate from 2/6 → 5/6.
+- **Cost accounting fix** — Failed 402 responses (payment rejected) no longer report `costPerCall` since USDC was never spent on-chain. Only successful responses record cost.
+- **Gloria param name fix** — Server expects `feed_categories` not `categories`. Updated defaultParams to `"feed_categories": "crypto,defi,base"` for both gloria-news and gloria-recaps.
 
-**Discoverability improvements:**
-- **ERC-8004 metadata fields** — Added `agentType: "orchestrator"`, `tags`, `categories` to registration JSON.
-- **Re-set agentURI on-chain** — Previous `setAgentURI` tx wasn't indexed by xgate. Re-ran successfully, verified `tokenURI(17653)` returns correct URL on-chain.
-- **8004scan score** — Went from 27/100 → 57/100. Remaining gaps are usage-based (quality, wallet, popularity scores).
+**Prompt tuning:**
+- **Decomposition** — Added rule against overlapping capabilities, enforced concise param values, prefer direct-answer capabilities over tangential data.
+- **Synthesis** — Decisive analyst tone ("briefing a trader"), explicit fact vs. inference labels, data gaps ranked by impact (HIGH/MEDIUM/LOW), new "What To Do Next" section with concrete action items, cross-signal validation across data sources.
 
-**Zapper investigation (parked):**
-- Full diagnostic: 402 parsing works, payment payload created correctly, `X-PAYMENT` header sent, but Zapper returns 402 again on retry.
-- Root cause: Zapper uses x402 v1 protocol. Our `@x402/fetch` v2 library claims backward compat but the payment isn't accepted.
-- **Decision:** 17 Zapper endpoints set to `tier: "disabled"`. Easy to re-enable by changing tier back to `"standard"`. 24 active endpoints remain with full DeFi intelligence coverage.
+**Previous session (2026-02-17):**
+- Parallel endpoint execution (`Promise.allSettled`), real LLM cost tracking, defensive param merge, x402 diagnostic logging
+- ERC-8004 metadata fields (agentType, tags, categories), re-set agentURI on-chain
+- Zapper v1 investigation → disabled 17 endpoints
+- Gloria paramHints updated, 8004scan score 27 → 57
 
-**Previous session (2026-02-16):**
-- Fixed Neynar endpoints — Added `queryParamName: "q"`, fixed Feed capability to `farcaster_feed`
-- Fixed Gloria News — param name `categories` (plural), not `category`
-- Prompt iteration — Decomposer outputs structured params per sub-task with `paramHints` from registry
-- Code fence stripping — Pipeline handles LLM wrapping JSON in code fences
-- ERC-8004 metadata — Added `/.well-known/agent-registration.json` route
-- Logo — Added at `/logo.png`, wired into ERC-8004 `image` field
-- Added 17 Zapper endpoints (now disabled, see above)
+**Earlier (2026-02-16):**
+- Neynar fixes, Gloria param fix, prompt iteration, code fence stripping, ERC-8004 metadata route, logo, Zapper endpoints
 
 ### Next Session — Ready to Action
 
-**1. Daydreams Router integration** (15 min, medium impact)
-- Install `@daydreamsai/ai-sdk-provider`, change 2 lines in `pipeline.ts`:
-  ```typescript
-  // Before
-  import { anthropic } from "@ai-sdk/anthropic";
-  const model = anthropic("claude-sonnet-4-5-20250929");
-  // After
-  import { dreamsRouter } from "@daydreamsai/ai-sdk-provider";
-  const model = dreamsRouter("anthropic/claude-sonnet-4-5-20250929");
-  ```
+**1. Reduce synthesis cost** (high impact on margin)
+- Synthesis eats ~$0.14-0.17 per query because Neynar returns 40K+ tokens of raw Farcaster casts
+- Fix: truncate/summarize verbose endpoint responses before passing to synthesis prompt
+- Target: cap endpoint data at ~5K tokens total → synthesis cost drops to ~$0.03-0.05
+- This turns the $0.25 charge from thin margin into ~3-4x markup
+
+**2. Elsa investigation** (medium impact)
+- All 6 Elsa endpoints consistently return 524 (Cloudflare timeout) — their server is down
+- 4 capabilities are unique to Elsa: `token_search`, `token_price`, `wallet_analysis`, `gas_data`
+- For token-specific queries, missing price data is a real gap (synthesis notes it, confidence drops)
+- Options: wait for Elsa to recover, find alternative providers on xgate, or build custom endpoints
+
+**3. Daydreams Router integration** (15 min, medium impact)
+- Install `@daydreamsai/ai-sdk-provider`, change 2 lines in `pipeline.ts`
 - Benefits: unified USDC billing (no API keys), provider fallback, ecosystem visibility
-- Docs: https://docs.dreams.fun/docs/router
-- npm: `@daydreamsai/ai-sdk-provider`
 
-**2. More prompt tuning** (medium impact)
-- Run 5-10 diverse queries (risk assessment, portfolio analysis, trend spotting, specific tokens)
-- Tune decomposition + synthesis prompts for quality and accuracy
-
-**3. Chat UI (Phase 2)** (high impact)
+**4. Chat UI (Phase 2)** (high impact)
 - Next.js frontend opens Parallax to humans, not just agents
 - `useChat` hooks, wallet connection, streaming output
 
-**4. Farcaster/Telegram bot** (medium impact)
+**5. Farcaster/Telegram bot** (medium impact)
 - Lower friction entry point for building initial usage and reputation
 
 ### Full Roadmap (prioritized)
 
 **High impact:**
 1. ~~Parallel endpoint execution~~ — DONE
-2. **Daydreams Router** — USDC-native LLM calls, no API keys
-3. **Chat UI (Phase 2)** — Next.js frontend
-4. **More prompt tuning** — Diverse queries, tune for quality
+2. ~~Prompt tuning~~ — DONE (analyst tone, fact/inference, ranked gaps, action items)
+3. ~~Live x402 payments~~ — DONE (5/6 success, retry with jitter)
+4. **Reduce synthesis cost** — Truncate verbose endpoint data before synthesis
+5. **Chat UI (Phase 2)** — Next.js frontend
+6. **Daydreams Router** — USDC-native LLM calls, no API keys
 
 **Medium impact:**
-5. **Streaming responses** — Return partial results as they arrive
-6. **Postgres payment storage** — Replace in-memory storage for persistence
-7. **Memory integration** — Save query results, track endpoint reliability
-8. **Farcaster/Telegram bot** — Lower friction entry point
-9. **Profit sweep script** — Transfer excess USDC from CDP wallet
+7. **Elsa alternatives** — Find/build replacements for token_price, token_search, wallet_analysis
+8. **Streaming responses** — Return partial results as they arrive
+9. **Postgres payment storage** — Replace in-memory storage for persistence
+10. **Memory integration** — Save query results, track endpoint reliability
+11. **Farcaster/Telegram bot** — Lower friction entry point
+12. **Profit sweep script** — Transfer excess USDC from CDP wallet
 
 **Lower priority:**
-10. **Re-enable Zapper** — When x402 v1 compat is resolved or Zapper upgrades to v2
-11. **TEE migration** — Deploy to Phala Network for TEE badge on 8004scan
-12. **IPFS-pinned metadata** — Content-addressed agentURI for trust bump
-13. **Error edge cases** — Test: all endpoints fail, no matching endpoints, malformed LLM output
+13. **Re-enable Zapper** — When x402 v1 compat is resolved or Zapper upgrades to v2
+14. **TEE migration** — Deploy to Phala Network for TEE badge on 8004scan
+15. **IPFS-pinned metadata** — Content-addressed agentURI for trust bump
+16. **Error edge cases** — Test: all endpoints fail, no matching endpoints, malformed LLM output
 
 ## Build Progress
 
@@ -146,6 +154,18 @@ Core pipeline works end-to-end in mock mode and with real Anthropic API.
 | 5 | Re-set agentURI on-chain for xgate indexing | Done |
 | 6 | Zapper v1 investigation + disable | Done |
 | 7 | x402 diagnostic logging | Done |
+
+### Phase 1.7 — COMPLETE (Live Payments + Prompt Tuning)
+
+| Step | What | Status |
+|------|------|--------|
+| 1 | BigInt serialization fix for @x402/core | Done |
+| 2 | Retry with jittered backoff for CDP concurrency | Done |
+| 3 | Cost accounting fix (402 = no charge) | Done |
+| 4 | Gloria feed_categories param fix | Done |
+| 5 | Prompt tuning: decomposition (overlap, params, focus) | Done |
+| 6 | Prompt tuning: synthesis (tone, fact/inference, gaps, actions) | Done |
+| 7 | Live x402 test: 5/6 success rate | Done |
 
 ### Phase 2 — Chat UI (upcoming)
 - Next.js chat interface with Vercel AI SDK (`useChat` hooks)
@@ -181,7 +201,7 @@ src/
 │       └── registry.ts           # Endpoint registry — load, search by capability (pure functions)
 ├── endpoints/
 │   ├── registry.json             # 41 x402 endpoints (24 active, 17 Zapper disabled)
-│   └── client.ts                 # x402 HTTP client (mock mode, CDP wallet, timeouts, defensive params)
+│   └── client.ts                 # x402 HTTP client (mock mode, CDP wallet, retry+jitter, BigInt fix)
 ├── prompts/
 │   ├── decompose.ts              # Decomposition prompt template (includes paramHints)
 │   └── synthesize.ts             # Synthesis prompt template
@@ -207,8 +227,9 @@ Routes:
 
 **Payment flow:**
 ```
-Caller pays $0.25 USDC → CDP wallet → spends ~$0.03-0.08 on x402 + LLM → margin stays in wallet
+Caller pays $0.25 USDC → CDP wallet → spends ~$0.22-0.26 on x402 + LLM → thin margin
 ```
+**Margin warning:** At current synthesis costs (~$0.15-0.17 with verbose endpoint data), the $0.25 price barely covers costs. Priority fix: truncate endpoint data before synthesis to reduce LLM input tokens.
 
 ## Build & Run Commands
 
@@ -394,10 +415,13 @@ These are genuinely missing capabilities with no x402 provider available yet. Wa
 
 Pipeline uses real token counts from `generateText().usage` to calculate costs:
 - **Sonnet 4.5 pricing**: $3.00/MTok input, $15.00/MTok output, $0.30/MTok cached input
-- **Typical decomposition**: ~1900 input / ~300 output tokens → ~$0.011
-- **Typical synthesis**: ~600 input / ~900 output tokens → ~$0.015
-- **Total LLM cost per query**: ~$0.026
-- **Total with x402 endpoints**: ~$0.03-0.08 depending on tier
+- **Decomposition**: ~1900 input / ~500 output tokens → ~$0.013
+- **Synthesis (mock data)**: ~600 input / ~900 output → ~$0.015
+- **Synthesis (live data)**: ~40,000-48,000 input / ~1,500 output → ~$0.14-0.17
+- **Total per query (mock)**: ~$0.03
+- **Total per query (live)**: ~$0.22-0.26 (x402 ~$0.07 + LLM ~$0.19)
+
+**Why synthesis is expensive live:** Real endpoint data is verbose. Neynar returns full Farcaster cast objects (author, text, reactions, timestamps) — a single query can produce 40K+ tokens of raw data. This is the #1 cost optimization target: truncating endpoint responses before synthesis could cut LLM cost 3-5x.
 
 Helper function `calculateLlmCost()` in `pipeline.ts` handles the math. Token counts logged per step.
 
@@ -427,11 +451,14 @@ Helper function `calculateLlmCost()` in `pipeline.ts` handles the math. Token co
 
 ## Known Issues / Tech Debt
 
-- **Zapper x402 v1 incompatible**: 17 endpoints disabled. Our `@x402/fetch` v2 library creates valid payment payloads but Zapper's v1 server rejects them on retry (returns 402 again). Set to `tier: "disabled"`. Re-enable when resolved.
+- **Elsa x402 server down**: All 6 Elsa endpoints return 524 (Cloudflare timeout). 4 capabilities are unique to Elsa (`token_search`, `token_price`, `wallet_analysis`, `gas_data`) with no alternative provider. Reports still work but miss price data for token-specific queries. Monitor for recovery.
+- **BigInt.prototype.toJSON polyfill**: Global monkey-patch in `client.ts` to fix `@x402/core`'s `encodePaymentSignatureHeader`. Remove when upstream fixes this (they already have a `toJsonSafe` helper that handles it, just not in the standalone function).
+- **CDP wallet concurrency limit**: Parallel x402 payment signing causes nonce collisions. Mitigated with retry + jitter (2-4s random delay), but still adds latency. Root fix would be a signing queue or upstream CDP SDK fix.
+- **Synthesis cost is high with live data**: Real endpoint responses (especially Neynar) can be 40K+ tokens. Synthesis costs ~$0.14-0.17 per query. Need to truncate/summarize endpoint data before passing to synthesis prompt.
+- **Zapper x402 v1 incompatible**: 17 endpoints disabled. Set to `tier: "disabled"`. Re-enable when v1 compat resolved.
 - **Memory not wired into pipeline**: Need to add save-query-result and update-endpoint-reliability calls.
 - **Endpoint registry is static**: No runtime discovery. Phase 3 will add auto-discovery.
 - **Firecrawl returning 401**: Their x402 endpoint may be temporarily broken. Keep in registry, will self-heal when they fix it.
-- **Silverback returns generic data for some queries**: Token-audit, whale-moves, technical-analysis endpoints accept `symbol` param but sometimes return general data instead of token-specific.
 - **Payment storage is in-memory**: Payment tracking resets on server restart. Switch to Postgres for persistence when needed.
 - **8004scan score 57/100**: Remaining gaps are usage-based (quality, wallet, popularity). Need real agent-to-agent transactions and feedback to improve.
 - **xgate indexing pending**: `tokenUri` set on-chain and verified, but xgate hasn't re-crawled yet. Should resolve automatically.
