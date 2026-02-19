@@ -29,7 +29,12 @@ Parallax is both a **consumer** (pays other x402 endpoints for data) and a **pro
 
 ### Live x402 Testing
 
-**Latest (2026-02-18, Phase 1.8):** 3 new providers tested live — CoinGecko, Otto AI, CryptoRugMunch. All 3 working.
+**Production end-to-end (2026-02-19):** Full production invoke via x402 payment — caller pays $0.25 USDC, server runs pipeline, returns report.
+- **Status:** 200 OK in 68s
+- **On-chain tx:** [`0x3ef4b655...`](https://basescan.org/tx/0x3ef4b655aeb8d33e2a9963d54e6c5abcab6c6bc63359a11580c2d4edaf9ea762)
+- **Facilitator:** PayAI (`facilitator.payai.network`) — switched after Daydreams facilitator broke (see Known Issues)
+
+**Local tests (2026-02-18, Phase 1.8):** 3 new providers tested — CoinGecko, Otto AI, CryptoRugMunch. All 3 working.
 
 | Test | Query | Endpoints | Success | x402 Cost | Total Cost |
 |------|-------|-----------|---------|-----------|------------|
@@ -56,7 +61,14 @@ Key findings:
 - **Self-funding model:** Incoming x402 payments go to CDP wallet, same wallet pays outgoing endpoint calls. Margin accumulates. Sweep profits periodically via CDP SDK.
 - Check balance: `npx tsx src/check-balance.ts`
 
-### What's Done (2026-02-18 session)
+### What's Done (2026-02-18/19 session)
+
+**Facilitator migration (2026-02-19):**
+- **Daydreams facilitator broke** — `facilitator.daydreams.systems` started requiring Bearer token auth, breaking all incoming payment verification with 401 Unauthorized.
+- **Tried Coinbase CDP facilitator** (`api.cdp.coinbase.com/platform/v2/x402`) — also requires auth that Lucid payments middleware doesn't pass.
+- **Tried x402.rs facilitator** (`facilitator.x402.rs`) — server started fine but crashed on first request: "fetch failed" + "Facilitator does not support scheme exact on network eip155:8453".
+- **Switched to PayAI facilitator** (`facilitator.payai.network`) — works immediately, public, no auth, supports Base mainnet with exact scheme. Full production test succeeded with on-chain payment.
+- **Lesson:** Facilitator is a critical dependency. Consider adding facilitator health check on startup or fallback logic.
 
 **New endpoint providers (Phase 1.8):**
 - **CoinGecko x402** (3 endpoints) — simple-price, trending-pools, search-pools. All $0.01/call. Fills the token_price and token_search gaps left by Elsa being down.
@@ -92,27 +104,16 @@ Key findings:
 - Target: cap endpoint data at ~5K tokens total → synthesis cost drops to ~$0.03-0.05 consistently
 - This turns the $0.25 charge from thin margin into ~3-4x markup
 
-**2. Deploy new endpoints to Railway** (quick, needed)
-- The 13 new endpoints (CoinGecko, Otto, RugMunch) are only in local code
-- Run `railway up --detach` to deploy, then test a production invoke
-
-**3. Elsa alternatives** (mostly resolved)
-- `token_search` → now covered by CoinGecko search-pools
-- `token_price` → now covered by CoinGecko simple-price + Otto token-details
-- `wallet_analysis` → still no alternative (Zapper has it but is disabled/v1)
-- `gas_data` → still no alternative
-- Consider: re-check if Elsa has recovered, or keep disabled
-
-**4. Chat UI (Phase 2)** (high impact)
+**2. Chat UI (Phase 2)** (high impact)
 - Next.js frontend opens Parallax to humans, not just agents
 - `useChat` hooks, wallet connection, streaming output
 
-**5. Farcaster/Telegram bot** (medium impact)
+**3. Farcaster/Telegram bot** (medium impact)
 - Lower friction entry point for building initial usage and reputation
 
-**6. Daydreams Router integration** (low priority now)
-- Install `@daydreamsai/ai-sdk-provider`, change 2 lines in `pipeline.ts`
-- Benefits: unified USDC billing (no API keys), provider fallback
+**4. Facilitator resilience** (low priority, nice to have)
+- Add facilitator health check on startup or fallback to a secondary facilitator
+- Known working facilitators: PayAI (current), x402.org (testnet only), CDP (needs auth)
 
 ### Full Roadmap (prioritized)
 
@@ -121,8 +122,8 @@ Key findings:
 2. ~~Prompt tuning~~ — DONE (analyst tone, fact/inference, ranked gaps, action items)
 3. ~~Live x402 payments~~ — DONE (5/6 success, retry with jitter)
 4. ~~Expand endpoint coverage~~ — DONE (CoinGecko, Otto AI, CryptoRugMunch — 13 new endpoints)
-5. **Reduce synthesis cost** — Truncate verbose endpoint data before synthesis
-6. **Deploy new endpoints to Railway** — Push Phase 1.8 to production
+5. ~~Deploy to production~~ — DONE (Phase 1.8 deployed, facilitator migrated to PayAI, production test passed)
+6. **Reduce synthesis cost** — Truncate verbose endpoint data before synthesis
 7. **Chat UI (Phase 2)** — Next.js frontend
 
 **Medium impact:**
@@ -324,7 +325,7 @@ Required in `.env` (see `.env.example`):
 - `EVM_PRIVATE_KEY` — (dev only) Local private key signer instead of CDP wallet
 - `PORT` — Server port (default: 3000)
 - `AGENT_URL` — Public URL for agent card (default: `http://localhost:PORT`)
-- `FACILITATOR_URL` — x402 facilitator (default: `https://facilitator.daydreams.systems`)
+- `FACILITATOR_URL` — x402 facilitator for incoming payment verification (default: `https://facilitator.payai.network`)
 
 All env vars are set on Railway. To update: `railway variables set KEY="value"`
 
@@ -483,7 +484,7 @@ Helper function `calculateLlmCost()` in `pipeline.ts` handles the math. Token co
 - `@lucid-agents/wallet` — wallet management (installed, not yet wired)
 
 **Key config:**
-- `payments()` config requires `payTo` (0x address), `network` (CAIP-2 format: `eip155:8453`), `facilitatorUrl`, and `storage`
+- `payments()` config requires `payTo` (0x address), `network` (CAIP-2 format: `eip155:8453`), `facilitatorUrl` (currently `https://facilitator.payai.network`), and `storage`
 - Node.js **must** use `storage: { type: 'in-memory' }` or `storage: { type: 'postgres' }` — SQLite is Bun-only
 - Entrypoint `price` format: `'0.25'` (flat) or `{ invoke: '0.25', stream: '1.00' }` (separate)
 - Agent card served at both `/.well-known/agent.json` and `/.well-known/agent-card.json`
@@ -498,6 +499,7 @@ Helper function `calculateLlmCost()` in `pipeline.ts` handles the math. Token co
 
 ## Known Issues / Tech Debt
 
+- **Facilitator dependency**: Incoming x402 payment verification depends on a third-party facilitator. The Daydreams facilitator (`facilitator.daydreams.systems`) broke on 2026-02-19 by adding Bearer token auth without notice. Coinbase CDP facilitator also requires auth. x402.rs was unreachable. **Currently using PayAI** (`facilitator.payai.network`) — public, no auth, supports Base. If PayAI goes down, incoming payments will fail. Consider adding fallback logic.
 - **Elsa x402 server down**: All 6 Elsa endpoints return 524 (Cloudflare timeout). Most capabilities now covered by alternatives: `token_search` → CoinGecko search-pools, `token_price` → CoinGecko simple-price / Otto token-details. Still missing: `wallet_analysis` and `gas_data`. Monitor for recovery.
 - **BigInt.prototype.toJSON polyfill**: Global monkey-patch in `client.ts` to fix `@x402/core`'s `encodePaymentSignatureHeader`. Remove when upstream fixes this (they already have a `toJsonSafe` helper that handles it, just not in the standalone function).
 - **CDP wallet concurrency limit**: Parallel x402 payment signing causes nonce collisions. Mitigated with retry + jitter (2-4s random delay), but still adds latency. Root fix would be a signing queue or upstream CDP SDK fix.
