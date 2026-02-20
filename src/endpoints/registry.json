@@ -392,7 +392,7 @@
     "description": "Real-time token price, market cap, 5m/1h/24h price changes, volume, and liquidity",
     "paramHints": "address (required: 0x token contract address), chainId (required: chain ID e.g. 8453 for Base), currency (optional: default 'USD')",
     "method": "POST",
-    "tier": "disabled"
+    "tier": "standard"
   },
   {
     "id": "zapper-token-holders",
@@ -407,7 +407,7 @@
     "description": "List of token holders with balances, percentile shares, and identity info (ENS, Farcaster)",
     "paramHints": "address (required: 0x token contract address), chainId (required: chain ID e.g. 8453), first (required: number of holders to return), after (optional: pagination cursor)",
     "method": "POST",
-    "tier": "disabled"
+    "tier": "standard"
   },
   {
     "id": "zapper-token-ranking",
@@ -422,7 +422,7 @@
     "description": "Trending tokens ranked by swap activity and adoption velocity, with price data and buyer counts",
     "paramHints": "first (optional: number of results, default 10), after (optional: pagination cursor), fid (optional: Farcaster ID for personalized ranking)",
     "method": "POST",
-    "tier": "disabled"
+    "tier": "standard"
   },
   {
     "id": "zapper-token-activity-feed",
@@ -438,7 +438,7 @@
     "description": "Combined activity feed for a specific token: swaps and top Farcaster casts about the token",
     "paramHints": "chainId (required: chain ID e.g. 8453), tokenAddress (required: 0x token contract address), fid (optional: Farcaster ID for personalization)",
     "method": "POST",
-    "tier": "disabled"
+    "tier": "standard"
   },
   {
     "id": "zapper-search",
@@ -452,7 +452,7 @@
     "description": "Search for ERC20 tokens, NFT collections, users, and apps by name across all chains. Use to resolve token names to contract addresses.",
     "paramHints": "search (required: query string e.g. 'AERO'), categories (optional: array of 'ERC20_TOKEN', 'GAS_TOKEN', 'NFT_COLLECTION', 'USER', 'APP', default ['ERC20_TOKEN']), maxResultsPerCategory (optional: default 5)",
     "method": "POST",
-    "tier": "disabled"
+    "tier": "standard"
   },
   {
     "id": "zapper-portfolio-totals",
@@ -467,7 +467,7 @@
     "description": "Aggregated portfolio value across tokens, DeFi, and NFTs broken down by network for one or more addresses",
     "paramHints": "addresses (required: array of 0x wallet addresses), chainIds (optional: array of chain IDs e.g. [8453])",
     "method": "POST",
-    "tier": "disabled"
+    "tier": "standard"
   },
   {
     "id": "zapper-token-balances",
@@ -482,7 +482,7 @@
     "description": "Detailed token holdings with USD values for one or more addresses, optionally filtered by chain",
     "paramHints": "addresses (required: array of 0x wallet addresses), first (optional: number of tokens, max 20, default 10), chainIds (optional: array of chain IDs)",
     "method": "POST",
-    "tier": "disabled"
+    "tier": "standard"
   },
   {
     "id": "zapper-defi-balances",
@@ -497,7 +497,7 @@
     "description": "DeFi positions (liquidity pools, yield farming, lending, staking) for one or more addresses",
     "paramHints": "addresses (required: array of 0x wallet addresses), first (optional: number of positions, max 50, default 10), chainIds (optional: array of chain IDs)",
     "method": "POST",
-    "tier": "disabled"
+    "tier": "standard"
   },
   {
     "id": "zapper-general-swap-feed",
@@ -512,7 +512,7 @@
     "description": "Real-time feed of swap activity across Farcaster including token trades, volume, and social context",
     "paramHints": "No required parameters. Returns latest swap activity with Farcaster social context.",
     "method": "POST",
-    "tier": "disabled"
+    "tier": "standard"
   },
   {
     "id": "zapper-transaction-history",
@@ -527,7 +527,7 @@
     "description": "Chronological transaction timeline with human-readable interpretations for one or more addresses",
     "paramHints": "subjects (required: array of 0x wallet addresses), perspective (optional: 'All', 'Sent', 'Received', default 'All'), first (optional: number of results, default 10), chainIds (optional: array of chain IDs)",
     "method": "POST",
-    "tier": "disabled"
+    "tier": "standard"
   },
   {
     "id": "zapper-account-identity",
@@ -542,7 +542,7 @@
     "description": "Resolve social identity (ENS, Farcaster, Lens, Basenames) for a wallet address",
     "paramHints": "address (required: 0x wallet address)",
     "method": "POST",
-    "tier": "disabled"
+    "tier": "standard"
   },
   {
     "id": "zapper-historical-token-price",
@@ -556,7 +556,7 @@
     "description": "Token price at any historical point in time, useful for PnL calculations and charting",
     "paramHints": "address (required: 0x token contract address), chainId (required: chain ID), timestamp (required: unix timestamp in milliseconds), currency (optional: default 'USD')",
     "method": "POST",
-    "tier": "disabled"
+    "tier": "standard"
   },
   {
     "id": "zapper-nft-balances",
@@ -571,7 +571,7 @@
     "description": "Individual NFT holdings with floor prices and estimated values for one or more addresses",
     "paramHints": "addresses (required: array of 0x wallet addresses), first (optional: number of NFTs, default 10), sortBy (optional: 'USD_WORTH', 'NETWORK', 'COLLECTION'), chainIds (optional: array of chain IDs)",
     "method": "POST",
-    "tier": "disabled"
+    "tier": "standard"
   },
   {
     "id": "zapper-nft-ranking",
@@ -586,7 +586,7 @@
     "description": "Trending NFT collections ranked by trading volume and popularity, with floor prices and volume stats",
     "paramHints": "first (optional: number of results, default 10), after (optional: pagination cursor)",
     "method": "POST",
-    "tier": "disabled"
+    "tier": "standard"
   },
   {
     "id": "zapper-nft-collection-metadata",
@@ -601,7 +601,7 @@
     "description": "NFT collection stats: floor price, market cap, holder count, events, and sample NFTs",
     "paramHints": "collections (required: array of objects with 'address' (string) and 'chainId' (integer) for each collection)",
     "method": "POST",
-    "tier": "disabled"
+    "tier": "standard"
   },
   {
     "id": "zapper-nft-token-metadata",
@@ -615,7 +615,7 @@
     "description": "Full metadata for a specific NFT including traits, media, holder info, estimated value, and last sale price",
     "paramHints": "collectionAddress (required: 0x collection contract address), chainId (required: chain ID), tokenId (required: specific token ID string)",
     "method": "POST",
-    "tier": "disabled"
+    "tier": "standard"
   },
   {
     "id": "zapper-transaction-details",
@@ -629,7 +629,7 @@
     "description": "Human-readable transaction interpretation with metadata and balance changes for a specific tx hash",
     "paramHints": "hash (required: 0x transaction hash), chainId (required: chain ID where the transaction occurred)",
     "method": "POST",
-    "tier": "disabled"
+    "tier": "standard"
   },
   {
     "id": "coingecko-simple-price",
