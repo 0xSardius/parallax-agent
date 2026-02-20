@@ -27,7 +27,7 @@ export const SubTaskSchema = z.object({
   task: z.string(),
   requiredCapability: z.string(),
   priority: z.number().int().min(1).max(5),
-  params: z.record(z.string(), z.string()).optional(),
+  params: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type SubTask = z.infer<typeof SubTaskSchema>;
