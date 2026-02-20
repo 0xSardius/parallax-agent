@@ -9,7 +9,7 @@ import {
 import { getCapabilityDetails, findByCapability } from "./agent/contexts/registry.js";
 import { callEndpoint } from "./endpoints/client.js";
 import { buildDecompositionPrompt } from "./prompts/decompose.js";
-import { buildSynthesisPrompt } from "./prompts/synthesize.js";
+import { buildSynthesisPrompt, truncateAllEndpointData } from "./prompts/synthesize.js";
 import { logInfo, logError } from "./utils/logger.js";
 
 // Claude Sonnet 4.5 pricing (USD per token)
@@ -150,6 +150,12 @@ export async function runPipeline(
 
   // --- Step 3: Synthesize report ---
   logInfo("\n=== Step 3: Report Synthesis ===");
+
+  // Log data truncation stats
+  const { rawChars, truncatedChars } = truncateAllEndpointData(endpointResults);
+  const savings = rawChars > 0 ? ((1 - truncatedChars / rawChars) * 100).toFixed(0) : "0";
+  logInfo(`Data truncation: ${rawChars.toLocaleString()} → ${truncatedChars.toLocaleString()} chars (${savings}% reduction, ~${Math.round(truncatedChars / 4)} tokens)`);
+
   const synthesisPrompt = buildSynthesisPrompt(query, endpointResults);
 
   const synthesisResult = await generateText({
