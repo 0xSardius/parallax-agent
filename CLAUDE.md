@@ -29,6 +29,12 @@ Parallax is both a **consumer** (pays other x402 endpoints for data) and a **pro
 
 ### Live x402 Testing
 
+**Latest test (2026-02-19, post-optimization):** 6/6 endpoints succeeded including Neynar (restored). Synthesis cost cut 6x via data truncation.
+- **Endpoints:** CoinGecko, CryptoRugMunch, Otto AI, Neynar, Silverback x2
+- **Data truncation:** 85,230 → 5,327 chars (94% reduction)
+- **Synthesis:** 2,662 input tokens → $0.028 (was ~48K tokens → $0.17)
+- **Total cost:** $0.124 (was $0.23) — **~50% margin on $0.25 charge**
+
 **Production end-to-end (2026-02-19):** Full production invoke via x402 payment — caller pays $0.25 USDC, server runs pipeline, returns report.
 - **Status:** 200 OK in 68s
 - **On-chain tx:** [`0x3ef4b655...`](https://basescan.org/tx/0x3ef4b655aeb8d33e2a9963d54e6c5abcab6c6bc63359a11580c2d4edaf9ea762)
@@ -42,26 +48,34 @@ Parallax is both a **consumer** (pays other x402 endpoints for data) and a **pro
 | 2 | Contract address rug check | RugMunch, Otto, Silverback x2 | 4/4 | $0.052 | $0.114 |
 | 3 | DeFi yield + funding + macro | Silverback, Otto x3 | 3/4 | $0.040 | $0.085 |
 
-Key findings:
-- **CryptoRugMunch** returned real risk data: AERO score 37/100, $281M mcap, $18.6M liquidity, SAFE recommendation
-- **Otto funding-rates** returned cross-exchange data with Binance, HTX, MEXC rates
-- **Otto tradfi-data** connected but returned null values (their data source may be intermittent)
-- CryptoRugMunch `check-risk` needs a contract address, not a symbol — decomposer handles this correctly when given an address
-
-**Earlier (2026-02-18, Phase 1.7):** First live tests. 5/6 endpoints succeeded (only Elsa down).
-
-**Actual costs per query (live data):**
-- x402 endpoints: ~$0.04-0.07 USDC (varies by query)
-- LLM decomposition: ~$0.013 (1900in/500out tokens)
-- LLM synthesis: ~$0.03-0.17 (varies by response verbosity — Neynar data is 40K+ tokens)
-- **Total: ~$0.08-0.26 per query** (depends on which endpoints are called)
+**Actual costs per query (live data, post-optimization):**
+- x402 endpoints: ~$0.04-0.08 USDC (varies by query)
+- LLM decomposition: ~$0.015 (2300in/500out tokens)
+- LLM synthesis: ~$0.03 (2500-3000in/1300out tokens — truncation caps input)
+- **Total: ~$0.08-0.13 per query** — healthy margin on $0.25 charge
 
 ### Wallet Balances
-- **CDP Wallet:** `0x13bE67822Ea3B51bFa477A6b73DFc2C25D12359A` — ~$7.34 USDC + ETH (as of 2026-02-18, after 7 live tests)
+- **CDP Wallet:** `0x13bE67822Ea3B51bFa477A6b73DFc2C25D12359A` — ~$7.10 USDC + ETH (as of 2026-02-19, after ~10 live tests)
 - **Self-funding model:** Incoming x402 payments go to CDP wallet, same wallet pays outgoing endpoint calls. Margin accumulates. Sweep profits periodically via CDP SDK.
 - Check balance: `npx tsx src/check-balance.ts`
 
-### What's Done (2026-02-18/19 session)
+### What's Done (2026-02-19 session #2)
+
+**Synthesis cost optimization:**
+- **Data truncation before synthesis** — `trimArrays()` trims arrays to 3 items (depth 2), compact JSON (no indentation), dynamic per-endpoint budget (16K chars total), hard cap with truncation marker.
+- **Result:** 85K chars → 5.3K chars (94% reduction). Synthesis input dropped from ~48K tokens to ~2.7K tokens. Synthesis cost: $0.17 → $0.028 (6x reduction).
+- **Margin improvement:** Total query cost $0.23 → $0.12. Margin on $0.25 charge: 8% → 50%.
+
+**Neynar x402 v1 fix:**
+- **Root cause:** `@x402/evm` 2.3.0 produced a v1 payment payload that Neynar rejected (Zod validation: signature type mismatch + missing transaction field).
+- **Fix:** Updated `@x402/evm` to 2.3.1 — patch fixes `ExactEvmSchemeV1` payload format.
+- **Result:** Neynar cast-search now succeeds. 6/6 endpoints working (was 5/6).
+- **Note:** This was the same class of v1 incompatibility as Zapper, but the 2.3.1 patch resolved it for Neynar. Zapper may also work now — worth testing.
+
+**Bazaar search for Farcaster alternatives:**
+- Searched x402 bazaar for Farcaster/social data providers — no new v2 alternatives found beyond Neynar and Zapper (v1).
+
+### What's Done (2026-02-18/19 session #1)
 
 **Facilitator migration (2026-02-19):**
 - **Daydreams facilitator broke** — `facilitator.daydreams.systems` started requiring Bearer token auth, breaking all incoming payment verification with 401 Unauthorized.
@@ -98,15 +112,13 @@ Key findings:
 
 ### Next Session — Ready to Action
 
-**1. Reduce synthesis cost** (high impact on margin)
-- Synthesis eats ~$0.03-0.17 per query depending on endpoint verbosity (Neynar is 40K+ tokens)
-- Fix: truncate/summarize verbose endpoint responses before passing to synthesis prompt
-- Target: cap endpoint data at ~5K tokens total → synthesis cost drops to ~$0.03-0.05 consistently
-- This turns the $0.25 charge from thin margin into ~3-4x markup
-
-**2. Chat UI (Phase 2)** (high impact)
+**1. Chat UI (Phase 2)** (high impact)
 - Next.js frontend opens Parallax to humans, not just agents
 - `useChat` hooks, wallet connection, streaming output
+
+**2. Test Zapper with @x402/evm 2.3.1** (medium impact, quick win)
+- The 2.3.1 patch fixed Neynar's v1 compat. Zapper uses v1 too — may now work.
+- If it does: re-enable 17 endpoints (NFTs, historical prices, wallet identity, ENS/Farcaster resolution)
 
 **3. Farcaster/Telegram bot** (medium impact)
 - Lower friction entry point for building initial usage and reputation
@@ -123,8 +135,9 @@ Key findings:
 3. ~~Live x402 payments~~ — DONE (5/6 success, retry with jitter)
 4. ~~Expand endpoint coverage~~ — DONE (CoinGecko, Otto AI, CryptoRugMunch — 13 new endpoints)
 5. ~~Deploy to production~~ — DONE (Phase 1.8 deployed, facilitator migrated to PayAI, production test passed)
-6. **Reduce synthesis cost** — Truncate verbose endpoint data before synthesis
-7. **Chat UI (Phase 2)** — Next.js frontend
+6. ~~Reduce synthesis cost~~ — DONE (truncation: 94% data reduction, synthesis cost $0.17 → $0.03, margin 8% → 50%)
+7. ~~Neynar v1 fix~~ — DONE (`@x402/evm` 2.3.1 fixes v1 payload format, 6/6 endpoints working)
+8. **Chat UI (Phase 2)** — Next.js frontend
 
 **Medium impact:**
 8. ~~Elsa alternatives~~ — MOSTLY DONE (token_price + token_search covered by CoinGecko/Otto; wallet_analysis + gas_data still missing)
@@ -364,7 +377,7 @@ const fetchWithPayment = wrapFetchWithPayment(fetch, client);
 const response = await fetchWithPayment(endpoint.url);
 ```
 
-**Note:** This only works with x402 v2 endpoints. Zapper uses v1 and is currently incompatible — see Known Issues.
+**Note:** Works with both x402 v2 and v1 endpoints as of `@x402/evm` 2.3.1 (fixed v1 `ExactEvmSchemeV1` payload format). Neynar (v1) now works. Zapper (v1) untested but may work — see Known Issues.
 
 ## Error Handling
 
@@ -463,13 +476,13 @@ Remaining gaps after Phase 1.8 expansion. Several previously-missing capabilitie
 
 Pipeline uses real token counts from `generateText().usage` to calculate costs:
 - **Sonnet 4.5 pricing**: $3.00/MTok input, $15.00/MTok output, $0.30/MTok cached input
-- **Decomposition**: ~1900 input / ~500 output tokens → ~$0.013
-- **Synthesis (mock data)**: ~600 input / ~900 output → ~$0.015
-- **Synthesis (live data)**: ~40,000-48,000 input / ~1,500 output → ~$0.14-0.17
-- **Total per query (mock)**: ~$0.03
-- **Total per query (live)**: ~$0.08-0.26 (varies: simple queries ~$0.08, Neynar-heavy queries ~$0.26)
+- **Decomposition**: ~2300 input / ~500 output tokens → ~$0.015
+- **Synthesis (mock data)**: ~700 input / ~1200 output → ~$0.021
+- **Synthesis (live data, post-truncation)**: ~2,500-3,000 input / ~1,300 output → ~$0.028
+- **Total per query (mock)**: ~$0.035
+- **Total per query (live)**: ~$0.08-0.13 (consistent thanks to truncation)
 
-**Why synthesis is expensive live:** Real endpoint data is verbose. Neynar returns full Farcaster cast objects (author, text, reactions, timestamps) — a single query can produce 40K+ tokens of raw data. This is the #1 cost optimization target: truncating endpoint responses before synthesis could cut LLM cost 3-5x.
+**Data truncation (2026-02-19):** `truncateEndpointData()` in `synthesize.ts` trims arrays to 3 items (depth 2), uses compact JSON (no indentation), allocates a 16K char total budget split evenly across endpoints, and hard-caps with a truncation marker. Raw endpoint data (85K+ chars with Neynar) gets reduced to ~5K chars (94% cut). This dropped synthesis cost from $0.17 to $0.028 — a 6x improvement. Pipeline logs before/after stats: `Data truncation: 85,230 → 5,327 chars (94% reduction, ~1332 tokens)`.
 
 Helper function `calculateLlmCost()` in `pipeline.ts` handles the math. Token counts logged per step.
 
@@ -503,8 +516,8 @@ Helper function `calculateLlmCost()` in `pipeline.ts` handles the math. Token co
 - **Elsa x402 server down**: All 6 Elsa endpoints return 524 (Cloudflare timeout). Most capabilities now covered by alternatives: `token_search` → CoinGecko search-pools, `token_price` → CoinGecko simple-price / Otto token-details. Still missing: `wallet_analysis` and `gas_data`. Monitor for recovery.
 - **BigInt.prototype.toJSON polyfill**: Global monkey-patch in `client.ts` to fix `@x402/core`'s `encodePaymentSignatureHeader`. Remove when upstream fixes this (they already have a `toJsonSafe` helper that handles it, just not in the standalone function).
 - **CDP wallet concurrency limit**: Parallel x402 payment signing causes nonce collisions. Mitigated with retry + jitter (2-4s random delay), but still adds latency. Root fix would be a signing queue or upstream CDP SDK fix.
-- **Synthesis cost is high with live data**: Real endpoint responses (especially Neynar) can be 40K+ tokens. Synthesis costs ~$0.14-0.17 per query. Need to truncate/summarize endpoint data before passing to synthesis prompt.
-- **Zapper x402 v1 incompatible**: 17 endpoints disabled. Set to `tier: "disabled"`. Re-enable when v1 compat resolved.
+- ~~**Synthesis cost is high with live data**~~: FIXED. Added `truncateEndpointData()` in `synthesize.ts` — trims arrays to 3 items, compact JSON, 16K char total budget. 85K → 5.3K chars (94% cut). Synthesis cost $0.17 → $0.028.
+- **Zapper x402 v1 — may now work**: 17 endpoints still disabled (`tier: "disabled"`). The `@x402/evm` 2.3.1 update fixed Neynar's v1 compat — Zapper uses v1 too and may now work. Worth testing a single Zapper endpoint to check.
 - **Memory not wired into pipeline**: Need to add save-query-result and update-endpoint-reliability calls.
 - **Endpoint registry is static**: No runtime discovery. Phase 3 will add auto-discovery.
 - **Otto tradfi-data returning nulls**: Endpoint accepts payment but returns null values for all fields. Their data source may be intermittent. Keep in registry — will self-heal.
