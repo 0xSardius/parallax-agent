@@ -10,7 +10,7 @@ Parallax is both a **consumer** (pays other x402 endpoints for data) and a **pro
 
 **Stack:** TypeScript (strict mode), Lucid Agents SDK, Vercel AI SDK, Hono, x402 protocol, USDC on Base, CDP Server Wallet v2
 **Deployment:** Railway (https://parallax-agent-production.up.railway.app)
-**Status:** LIVE — Phase 1.8, deployed to Railway, registered on ERC-8004, 37 active x402 endpoints across 9 providers
+**Status:** LIVE — Phase 1.9, deployed to Railway, registered on ERC-8004, 54 active x402 endpoints across 10 providers
 
 ## RESUME HERE — Current Status
 
@@ -72,8 +72,15 @@ Parallax is both a **consumer** (pays other x402 endpoints for data) and a **pro
 - **Result:** Neynar cast-search now succeeds. 6/6 endpoints working (was 5/6).
 - **Note:** This was the same class of v1 incompatibility as Zapper, but the 2.3.1 patch resolved it for Neynar. Zapper may also work now — worth testing.
 
+**Zapper re-enabled (17 endpoints):**
+- Tested token-ranking and search with POST — both return real data (trending tokens, AERO token search).
+- Root cause of original failure: `@x402/evm` 2.3.0 v1 payload format was incompatible. 2.3.1 fixed it.
+- All 17 Zapper endpoints already had `method: "POST"` set correctly — just needed tier changed from `"disabled"` to `"standard"`.
+- **New capabilities restored:** NFT data, historical token prices, wallet identity (ENS/Farcaster/Lens), transaction interpretation, DeFi balances, swap feeds.
+- **Total active endpoints: 54 across 10 providers.**
+
 **Bazaar search for Farcaster alternatives:**
-- Searched x402 bazaar for Farcaster/social data providers — no new v2 alternatives found beyond Neynar and Zapper (v1).
+- Searched x402 bazaar for Farcaster/social data providers — no new v2 alternatives found beyond Neynar and Zapper.
 
 ### What's Done (2026-02-18/19 session #1)
 
@@ -116,14 +123,10 @@ Parallax is both a **consumer** (pays other x402 endpoints for data) and a **pro
 - Next.js frontend opens Parallax to humans, not just agents
 - `useChat` hooks, wallet connection, streaming output
 
-**2. Test Zapper with @x402/evm 2.3.1** (medium impact, quick win)
-- The 2.3.1 patch fixed Neynar's v1 compat. Zapper uses v1 too — may now work.
-- If it does: re-enable 17 endpoints (NFTs, historical prices, wallet identity, ENS/Farcaster resolution)
-
-**3. Farcaster/Telegram bot** (medium impact)
+**2. Farcaster/Telegram bot** (medium impact)
 - Lower friction entry point for building initial usage and reputation
 
-**4. Facilitator resilience** (low priority, nice to have)
+**3. Facilitator resilience** (low priority)
 - Add facilitator health check on startup or fallback to a secondary facilitator
 - Known working facilitators: PayAI (current), x402.org (testnet only), CDP (needs auth)
 
@@ -149,7 +152,7 @@ Parallax is both a **consumer** (pays other x402 endpoints for data) and a **pro
 
 **Lower priority:**
 14. **Daydreams Router** — USDC-native LLM calls, no API keys
-15. **Re-enable Zapper** — When x402 v1 compat is resolved or Zapper upgrades to v2
+15. ~~Re-enable Zapper~~ — DONE (`@x402/evm` 2.3.1 fixed v1 compat, 17 endpoints re-enabled)
 16. **TEE migration** — Deploy to Phala Network for TEE badge on 8004scan
 17. **IPFS-pinned metadata** — Content-addressed agentURI for trust bump
 18. **Error edge cases** — Test: all endpoints fail, no matching endpoints, malformed LLM output
@@ -448,11 +451,15 @@ const response = await fetchWithPayment(endpoint.url);
 **Firecrawl** (`api.firecrawl.dev`) — 1 endpoint (premium):
 - search ($0.01)
 
-### Disabled (17 Zapper endpoints — x402 v1 incompatible)
+### Zapper (17 endpoints — RE-ENABLED)
 
-All `public.zapper.xyz/x402/*` endpoints are set to `tier: "disabled"` in `registry.json`. They use x402 v1 protocol which our v2 client library can't complete payments for. Full diagnostic in commit `a9ba1ed`. Re-enable by changing tier back to `"standard"` when v1 compat is resolved.
+All `public.zapper.xyz/x402/*` endpoints re-enabled as of 2026-02-19 after `@x402/evm` 2.3.1 fixed v1 payment compat. All use POST method. Tested: token-ranking, search — both return real data.
 
-Capabilities temporarily lost: NFT data, historical token prices, ENS/Farcaster identity resolution, human-readable transaction interpretation. Core DeFi intelligence capabilities remain fully covered.
+**Zapper** (`public.zapper.xyz`) — 17 endpoints, $0.001-0.005 each:
+- token-price, token-holders, token-ranking, token-activity-feed, token-balances
+- search, portfolio-totals, defi-balances, general-swap-feed
+- transaction-history, transaction-details, account-identity
+- historical-token-price, nft-balances, nft-ranking, nft-collection-metadata, nft-token-metadata
 
 ### Capability Gaps to Explore
 
@@ -465,12 +472,12 @@ Remaining gaps after Phase 1.8 expansion. Several previously-missing capabilitie
 | ~~**Rug detection**~~ | ~~High~~ | **FILLED** — CryptoRugMunch check-risk, token-intel, market-risk, scammer-check |
 | ~~**Funding rates**~~ | ~~Medium~~ | **FILLED** — Otto AI funding-rates (cross-exchange perps data) |
 | ~~**TradFi macro**~~ | ~~Medium~~ | **FILLED** — Otto AI tradfi-data (S&P, VIX, DXY, yields) |
-| **Wallet analysis** | Medium | Deep wallet profiling (PnL, risk score, diversification). Elsa had this but is down. Zapper has it but is disabled (v1). |
+| ~~**Wallet analysis**~~ | ~~Medium~~ | **FILLED** — Zapper portfolio-totals, token-balances, defi-balances, transaction-history re-enabled |
 | **Gas prices** | Low-Medium | Current gas across networks. Elsa had this but is down. Not critical for intelligence queries. |
 | **Protocol revenue/TVL tracking** | Medium | DefiLlama-style data. Otto defi-analytics provides some coverage. |
 | **On-chain governance** | Medium | DAO proposals, votes, quorum status. No x402 provider exists yet. |
-| **Historical price data** | Low-Medium | Can't answer "how has X performed over 30 days?" Zapper had this. |
-| **NFT data** | Low | Collection stats, floor prices, holder analysis. Zapper had this. Not critical for DeFi intelligence. |
+| ~~**Historical price data**~~ | ~~Low-Medium~~ | **FILLED** — Zapper historical-token-price re-enabled |
+| ~~**NFT data**~~ | ~~Low~~ | **FILLED** — Zapper nft-balances, nft-ranking, nft-collection-metadata, nft-token-metadata re-enabled |
 
 ## LLM Cost Tracking
 
@@ -517,7 +524,7 @@ Helper function `calculateLlmCost()` in `pipeline.ts` handles the math. Token co
 - **BigInt.prototype.toJSON polyfill**: Global monkey-patch in `client.ts` to fix `@x402/core`'s `encodePaymentSignatureHeader`. Remove when upstream fixes this (they already have a `toJsonSafe` helper that handles it, just not in the standalone function).
 - **CDP wallet concurrency limit**: Parallel x402 payment signing causes nonce collisions. Mitigated with retry + jitter (2-4s random delay), but still adds latency. Root fix would be a signing queue or upstream CDP SDK fix.
 - ~~**Synthesis cost is high with live data**~~: FIXED. Added `truncateEndpointData()` in `synthesize.ts` — trims arrays to 3 items, compact JSON, 16K char total budget. 85K → 5.3K chars (94% cut). Synthesis cost $0.17 → $0.028.
-- **Zapper x402 v1 — may now work**: 17 endpoints still disabled (`tier: "disabled"`). The `@x402/evm` 2.3.1 update fixed Neynar's v1 compat — Zapper uses v1 too and may now work. Worth testing a single Zapper endpoint to check.
+- ~~**Zapper x402 v1 incompatible**~~: FIXED. `@x402/evm` 2.3.1 fixed v1 payload format. All 17 Zapper endpoints re-enabled and tested. All use POST method.
 - **Memory not wired into pipeline**: Need to add save-query-result and update-endpoint-reliability calls.
 - **Endpoint registry is static**: No runtime discovery. Phase 3 will add auto-discovery.
 - **Otto tradfi-data returning nulls**: Endpoint accepts payment but returns null values for all fields. Their data source may be intermittent. Keep in registry — will self-heal.
