@@ -33,9 +33,9 @@ Parallax is both a **consumer** (pays other x402 endpoints for data) and a **pro
 - **Endpoints:** CoinGecko, CryptoRugMunch, Otto AI, Neynar, Silverback x2
 - **Data truncation:** 85,230 → 5,327 chars (94% reduction)
 - **Synthesis:** 2,662 input tokens → $0.028 (was ~48K tokens → $0.17)
-- **Total cost:** $0.124 (was $0.23) — **~50% margin on $0.25 charge**
+- **Total cost:** $0.124 (was $0.23) — **~17% margin on $0.15 charge**
 
-**Production end-to-end (2026-02-19):** Full production invoke via x402 payment — caller pays $0.25 USDC, server runs pipeline, returns report.
+**Production end-to-end (2026-02-19):** Full production invoke via x402 payment — caller pays USDC, server runs pipeline, returns report.
 - **Status:** 200 OK in 68s
 - **On-chain tx:** [`0x3ef4b655...`](https://basescan.org/tx/0x3ef4b655aeb8d33e2a9963d54e6c5abcab6c6bc63359a11580c2d4edaf9ea762)
 - **Facilitator:** PayAI (`facilitator.payai.network`) — switched after Daydreams facilitator broke (see Known Issues)
@@ -52,7 +52,7 @@ Parallax is both a **consumer** (pays other x402 endpoints for data) and a **pro
 - x402 endpoints: ~$0.04-0.08 USDC (varies by query)
 - LLM decomposition: ~$0.015 (2300in/500out tokens)
 - LLM synthesis: ~$0.03 (2500-3000in/1300out tokens — truncation caps input)
-- **Total: ~$0.08-0.13 per query** — healthy margin on $0.25 charge
+- **Total: ~$0.08-0.13 per query** — margin on $0.15 standard charge
 
 ### Wallet Balances
 - **CDP Wallet:** `0x13bE67822Ea3B51bFa477A6b73DFc2C25D12359A` — ~$7.10 USDC + ETH (as of 2026-02-19, after ~10 live tests)
@@ -64,7 +64,7 @@ Parallax is both a **consumer** (pays other x402 endpoints for data) and a **pro
 **Synthesis cost optimization:**
 - **Data truncation before synthesis** — `trimArrays()` trims arrays to 3 items (depth 2), compact JSON (no indentation), dynamic per-endpoint budget (16K chars total), hard cap with truncation marker.
 - **Result:** 85K chars → 5.3K chars (94% reduction). Synthesis input dropped from ~48K tokens to ~2.7K tokens. Synthesis cost: $0.17 → $0.028 (6x reduction).
-- **Margin improvement:** Total query cost $0.23 → $0.12. Margin on $0.25 charge: 8% → 50%.
+- **Margin improvement:** Total query cost $0.23 → $0.12. Cost reduction enables lower pricing ($0.15 standard, $1.50 premium).
 
 **Neynar x402 v1 fix:**
 - **Root cause:** `@x402/evm` 2.3.0 produced a v1 payment payload that Neynar rejected (Zod validation: signature type mismatch + missing transaction field).
@@ -272,9 +272,9 @@ Routes:
 
 **Payment flow:**
 ```
-Caller pays $0.25 USDC → CDP wallet → spends ~$0.08-0.26 on x402 + LLM → variable margin
+Caller pays $0.15 USDC (standard) or $1.50 (premium) → CDP wallet → spends ~$0.08-0.13 on x402 + LLM → margin
 ```
-**Margin note:** Cost varies significantly by query type. Simple queries (no Neynar) cost ~$0.08-0.12, giving healthy 2-3x margin. Neynar-heavy queries cost ~$0.22-0.26 (thin margin). Priority fix: truncate verbose endpoint data before synthesis.
+**Margin note:** After synthesis truncation (2026-02-19), costs are consistent at ~$0.08-0.13 regardless of which endpoints are called. At $0.15 standard pricing, margin is ~15-45%. Premium queries ($1.50) have high margin even with Einstein AI endpoints ($0.25-0.85 each).
 
 ## Build & Run Commands
 
@@ -406,7 +406,7 @@ const response = await fetchWithPayment(endpoint.url);
 - **Agent ID**: 17653
 - **Registration tx**: [0xd3b2a3...](https://basescan.org/tx/0xd3b2a333c4dcb7ffad254f4e22bf4d02d41da35b01aa98179daf236dfd9daa1f)
 - **Agent URI**: `https://parallax-agent-production.up.railway.app/.well-known/agent-registration.json`
-- **Latest URI update tx**: [0x0c3d97...](https://basescan.org/tx/0x0c3d97deec86a7668443cf46afb6756756816d63fb4dc90057b604b11f84d877)
+- **Latest URI update tx**: [0x40a9b0...](https://basescan.org/tx/0x40a9b0c20a9fba546f47b3cac5dcde4ebee99cb4f7fbb7660593fb62085f293f)
 - **8004scan**: https://www.8004scan.io/agents/base/17653 — score 57/100
 - **Agent wallet**: `0x13bE67822Ea3B51bFa477A6b73DFc2C25D12359A` (auto-set to msg.sender on register)
 - **Register new agent**: `npx tsx src/register-8004.ts`
