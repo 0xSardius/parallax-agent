@@ -69,7 +69,7 @@ addEntrypoint({
       .number()
       .describe("Number of successful endpoint calls"),
   }),
-  price: { invoke: "0.25" },
+  price: { invoke: "0.15" },
   async handler({ input }) {
     logInfo(`[Standard] Processing query: "${input.query}"`);
     const result = await runPipeline(input.query, "standard");
@@ -109,7 +109,7 @@ addEntrypoint({
       .number()
       .describe("Number of successful endpoint calls"),
   }),
-  price: { invoke: "3.00" },
+  price: { invoke: "1.50" },
   async handler({ input }) {
     logInfo(`[Premium] Processing query: "${input.query}"`);
     const result = await runPipeline(input.query, "premium");
@@ -142,7 +142,7 @@ app.get("/.well-known/agent-registration.json", (c) =>
     type: "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
     name: "Parallax",
     description:
-      "x402 intelligence orchestration agent. Chains multiple x402-paid DeFi and market data endpoints into compound intelligence reports. Standard reports $0.25 USDC, premium deep analysis $3.00 USDC. Pays and receives on Base.",
+      "x402 intelligence orchestration agent. Chains multiple x402-paid DeFi and market data endpoints into compound intelligence reports. 54 endpoints across 10 providers — DeFi, rug detection, Twitter sentiment, Farcaster social, NFTs, wallet analysis. Standard reports $0.15 USDC, premium deep analysis $1.50 USDC. Pays and receives on Base.",
     image: `${AGENT_URL}/logo.png`,
     agentType: "orchestrator",
     tags: ["defi", "intelligence", "x402", "base", "market-data", "analytics"],
