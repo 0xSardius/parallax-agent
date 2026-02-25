@@ -173,7 +173,7 @@ app.get("/.well-known/agent-registration.json", (c) =>
       },
     ],
     supportedTrust: ["reputation"],
-    updatedAt: Math.floor(Date.now() / 1000),
+    updatedAt: 1740528000, // 2025-02-26T00:00:00Z — fixed for content-addressing (IPFS pin)
   })
 );
 

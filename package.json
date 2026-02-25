@@ -8,7 +8,8 @@
     "postinstall": "patch-package",
     "start": "tsx src/server.ts",
     "cli": "tsx src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "pin-metadata": "tsx src/pin-metadata.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.59",
