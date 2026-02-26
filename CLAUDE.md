@@ -24,7 +24,8 @@ Parallax is both a **consumer** (pays other x402 endpoints for data) and a **pro
 - **ERC-8004 registration:** https://parallax-agent-production.up.railway.app/.well-known/agent-registration.json
 - **Mock mode:** OFF — real x402 payments active
 - **ERC-8004:** Agent #17653 on Base mainnet ([registration tx](https://basescan.org/tx/0xd3b2a333c4dcb7ffad254f4e22bf4d02d41da35b01aa98179daf236dfd9daa1f))
-- **8004scan:** https://www.8004scan.io/agents/base/17653 — metadata score 57/100, waiting for re-crawl to pick up new fields
+- **8004scan:** https://www.8004scan.io/agents/base/17653 — metadata score 57/100, waiting for re-crawl to pick up IPFS compliance bump
+- **IPFS metadata:** `ipfs://Qmau4NsPrJNjJUxF1XvFzGCSkEeGHnWBUzjUeKDMGWGxae` ([gateway](https://gateway.pinata.cloud/ipfs/Qmau4NsPrJNjJUxF1XvFzGCSkEeGHnWBUzjUeKDMGWGxae))
 - **xgate:** `tokenUri` set on-chain ([tx](https://basescan.org/tx/0x0c3d97deec86a7668443cf46afb6756756816d63fb4dc90057b604b11f84d877)), waiting for indexer to crawl
 
 ### Live x402 Testing
@@ -58,6 +59,16 @@ Parallax is both a **consumer** (pays other x402 endpoints for data) and a **pro
 - **CDP Wallet:** `0x13bE67822Ea3B51bFa477A6b73DFc2C25D12359A` — ~$7.10 USDC + ETH (as of 2026-02-19, after ~10 live tests)
 - **Self-funding model:** Incoming x402 payments go to CDP wallet, same wallet pays outgoing endpoint calls. Margin accumulates. Sweep profits periodically via CDP SDK.
 - Check balance: `npx tsx src/check-balance.ts`
+
+### What's Done (2026-02-25)
+
+**IPFS-pinned metadata for ERC-8004 compliance:**
+- **Problem:** 8004scan flagged agentURI as "not content-addressed — metadata can change without detection" because it pointed to a live HTTP endpoint with a dynamic `Date.now()` timestamp.
+- **Fix:** Created `src/pin-metadata.ts` script that pins registration JSON to IPFS via Pinata and updates on-chain `agentURI` to `ipfs://<CID>`.
+- **IPFS CID:** `Qmau4NsPrJNjJUxF1XvFzGCSkEeGHnWBUzjUeKDMGWGxae`
+- **On-chain tx:** [`0x9ca6ef8f...`](https://basescan.org/tx/0x9ca6ef8f0bb38c6eef844138b2cde334cc827056ac3f965769595ca5cb70ec7a)
+- **Also:** Froze `updatedAt` in `server.ts` to a static timestamp so the HTTP endpoint matches the pinned content.
+- **Re-run `npx tsx src/pin-metadata.ts`** whenever metadata changes to pin a new version and update on-chain URI.
 
 ### What's Done (2026-02-19 session #2)
 
@@ -154,7 +165,7 @@ Parallax is both a **consumer** (pays other x402 endpoints for data) and a **pro
 14. **Daydreams Router** — USDC-native LLM calls, no API keys
 15. ~~Re-enable Zapper~~ — DONE (`@x402/evm` 2.3.1 fixed v1 compat, 17 endpoints re-enabled)
 16. **TEE migration** — Deploy to Phala Network for TEE badge on 8004scan
-17. **IPFS-pinned metadata** — Content-addressed agentURI for trust bump
+17. ~~IPFS-pinned metadata~~ — DONE (Pinata pin + on-chain URI update to `ipfs://Qmau4NsP...`)
 18. **Error edge cases** — Test: all endpoints fail, no matching endpoints, malformed LLM output
 
 ## Build Progress
@@ -240,6 +251,7 @@ src/
 ├── pipeline.ts                   # Core pipeline: decompose → execute (parallel) → synthesize
 ├── check-balance.ts              # Utility: view CDP wallet balances (ETH + USDC)
 ├── register-8004.ts              # Utility: register/update agent on ERC-8004 IdentityRegistry
+├── pin-metadata.ts               # Utility: pin registration JSON to IPFS (Pinata) + update on-chain URI
 ├── agent/
 │   ├── types.ts                  # Zod-validated types (endpoints, sub-tasks, results, reports)
 │   └── contexts/
@@ -306,6 +318,9 @@ npx tsx src/register-8004.ts
 # Update ERC-8004 agentURI on-chain
 npx tsx src/register-8004.ts update-uri
 
+# Pin metadata to IPFS and update on-chain agentURI (re-run when metadata changes)
+npx tsx src/pin-metadata.ts
+
 # Deploy to Railway
 railway up --detach
 
@@ -342,6 +357,7 @@ Required in `.env` (see `.env.example`):
 - `PORT` — Server port (default: 3000)
 - `AGENT_URL` — Public URL for agent card (default: `http://localhost:PORT`)
 - `FACILITATOR_URL` — x402 facilitator for incoming payment verification (default: `https://facilitator.payai.network`)
+- `PINATA_JWT` — Pinata API key for IPFS pinning (free at https://app.pinata.cloud/developers/api-keys, only needed for `pin-metadata.ts`)
 
 All env vars are set on Railway. To update: `railway variables set KEY="value"`
 
@@ -405,12 +421,13 @@ const response = await fetchWithPayment(endpoint.url);
 - **Registry**: `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432` (Base mainnet)
 - **Agent ID**: 17653
 - **Registration tx**: [0xd3b2a3...](https://basescan.org/tx/0xd3b2a333c4dcb7ffad254f4e22bf4d02d41da35b01aa98179daf236dfd9daa1f)
-- **Agent URI**: `https://parallax-agent-production.up.railway.app/.well-known/agent-registration.json`
-- **Latest URI update tx**: [0x40a9b0...](https://basescan.org/tx/0x40a9b0c20a9fba546f47b3cac5dcde4ebee99cb4f7fbb7660593fb62085f293f)
+- **Agent URI**: `ipfs://Qmau4NsPrJNjJUxF1XvFzGCSkEeGHnWBUzjUeKDMGWGxae` (content-addressed, pinned via Pinata)
+- **Latest URI update tx**: [0x9ca6ef8f...](https://basescan.org/tx/0x9ca6ef8f0bb38c6eef844138b2cde334cc827056ac3f965769595ca5cb70ec7a)
 - **8004scan**: https://www.8004scan.io/agents/base/17653 — score 57/100
 - **Agent wallet**: `0x13bE67822Ea3B51bFa477A6b73DFc2C25D12359A` (auto-set to msg.sender on register)
 - **Register new agent**: `npx tsx src/register-8004.ts`
 - **Update URI**: `npx tsx src/register-8004.ts update-uri`
+- **Pin metadata to IPFS**: `npx tsx src/pin-metadata.ts` (re-run when metadata changes)
 - **Registration metadata includes**: agentType ("orchestrator"), tags, categories, services (A2A, web, agentWallet), x402Support, image
 
 ## Live x402 Endpoints
@@ -532,6 +549,7 @@ Helper function `calculateLlmCost()` in `pipeline.ts` handles the math. Token co
 - **Payment storage is in-memory**: Payment tracking resets on server restart. Switch to Postgres for persistence when needed.
 - **8004scan score 57/100**: Remaining gaps are usage-based (quality, wallet, popularity). Need real agent-to-agent transactions and feedback to improve.
 - **xgate indexing pending**: `tokenUri` set on-chain and verified, but xgate hasn't re-crawled yet. Should resolve automatically.
+- **IPFS metadata re-pin needed on changes**: When registration metadata changes (new endpoints, description, etc.), re-run `npx tsx src/pin-metadata.ts` to pin a new version and update the on-chain URI. The HTTP endpoint at `/.well-known/agent-registration.json` still serves the same metadata for direct browsing.
 - **CLI `$` escaping**: Use single quotes for queries with `$` symbols (e.g. `'Should I invest in $AERO?'`), otherwise the shell interprets `$AERO` as a variable.
 
 ## Relevant Skills
